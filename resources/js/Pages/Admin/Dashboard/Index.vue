@@ -1,0 +1,169 @@
+<script setup>
+import { Head, Link } from '@inertiajs/vue3';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+
+// بيانات تجريبية تحاكي ما سيتم تمريره من الـ Controller لاحقاً
+const stats = [
+    { label: 'إجمالي الأعضاء', value: '528', change: '+12 هذا الشهر', icon: '👥', color: 'text-blue-400' },
+    { label: 'اشتراكات سارية', value: '410', change: '77% نسبة الالتزام', icon: '⚡', color: 'text-amber-400' },
+    { label: 'حضور اليوم بالـ QR', value: '94', change: 'ذروة مسائية متوقعة', icon: '📷', color: 'text-emerald-400' },
+    { label: 'إيراد اليوم التقديري', value: '650,000 ل.س', change: 'كاش + شام كاش', icon: '💰', color: 'text-emerald-400' },
+];
+
+const recentCheckIns = [
+    { id: 1, name: 'أحمد الإبراهيم', code: 'GYM-1042', plan: 'باقة 3 أشهر', time: 'منذ 4 دقائق', gender: 'ذكر', status: 'valid' },
+    { id: 2, name: 'سامر قواس', code: 'GYM-1011', plan: 'باقة شهر واحد', time: 'منذ 14 دقيقة', gender: 'ذكر', status: 'valid' },
+    { id: 3, name: 'محمد الصباغ', code: 'GYM-0988', plan: 'الباقة السنوية VIP', time: 'منذ 28 دقيقة', gender: 'ذكر', status: 'valid' },
+    { id: 4, name: 'عمر زريق', code: 'GYM-1065', plan: 'باقة شهر واحد', time: 'منذ 35 دقيقة', gender: 'ذكر', status: 'expired' },
+];
+
+const pendingSubscriptions = [
+    { id: 101, name: 'باسل كنعان', phone: '0933112233', plan: 'باقة 3 أشهر', method: 'Sham Cash', ref: 'TXN-984210', amount: '400,000 ل.س' },
+    { id: 102, name: 'محمود الحلبي', phone: '0944556677', plan: 'باقة شهر واحد', method: 'Cash Desk', ref: 'يدوي', amount: '150,000 ل.س' },
+];
+</script>
+
+<template>
+    <Head title="لوحة التحكم الرئيسية - الإدارة" />
+
+    <AdminLayout>
+        <div class="space-y-8">
+            <!-- 1. شريط الترحيب والإجراءات السريعة -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-black text-white tracking-tight">نظرة عامة على الصالة</h1>
+                    <p class="text-xs text-slate-400 mt-1">متابعة التدفق الحي لدخول اللاعبين والعمليات المالية</p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <Link
+                        href="/admin/dashboard/checkin"
+                        class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/20"
+                    >
+                        <span>📷</span>
+                        <span>فتح مكتب ماسح الـ QR</span>
+                    </Link>
+
+                    <Link
+                        href="/admin/dashboard/members"
+                        class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl text-xs font-semibold transition"
+                    >
+                        + تسجيل لاعب يدوي
+                    </Link>
+                </div>
+            </div>
+
+            <!-- 2. بطاقات الإحصائيات الأربع -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div
+                    v-for="(stat, idx) in stats"
+                    :key="idx"
+                    class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md space-y-3 relative overflow-hidden group hover:border-slate-700 transition"
+                >
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-xs font-medium">{{ stat.label }}</span>
+                        <span class="text-lg p-2 rounded-xl bg-slate-950/60 border border-slate-800">{{ stat.icon }}</span>
+                    </div>
+
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-black text-white tracking-tight">{{ stat.value }}</span>
+                        <span :class="['text-[11px] font-semibold', stat.color]">{{ stat.change }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. شبكة الجداول: حضور اليوم وطلبات الاعتماد -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- جدول آخر حركات الدخول الحي (2 أعمدة) -->
+                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <h2 class="text-sm font-bold text-white">آخر حركات الدخول (سجل الباب الحي)</h2>
+                        </div>
+                        <span class="text-[11px] text-slate-500 font-mono">تحديث لحظي</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs">
+                            <thead class="text-slate-400 font-semibold border-b border-slate-800/60">
+                                <tr>
+                                    <th class="py-3 px-2">اللاعب</th>
+                                    <th class="py-3 px-2">كود العضوية</th>
+                                    <th class="py-3 px-2">نوع الباقة</th>
+                                    <th class="py-3 px-2">الوقت</th>
+                                    <th class="py-3 px-2">حالة الباب</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/40 text-slate-300">
+                                <tr v-for="entry in recentCheckIns" :key="entry.id" class="hover:bg-slate-800/30 transition">
+                                    <td class="py-3.5 px-2 font-bold text-white flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-slate-800 text-[11px] flex items-center justify-center">
+                                            {{ entry.gender === 'ذكر' ? '🚹' : '🚺' }}
+                                        </span>
+                                        <span>{{ entry.name }}</span>
+                                    </td>
+                                    <td class="py-3.5 px-2 font-mono text-slate-400">{{ entry.code }}</td>
+                                    <td class="py-3.5 px-2 text-slate-400">{{ entry.plan }}</td>
+                                    <td class="py-3.5 px-2 text-slate-500">{{ entry.time }}</td>
+                                    <td class="py-3.5 px-2">
+                                        <span
+                                            v-if="entry.status === 'valid'"
+                                            class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold"
+                                        >
+                                            ✓ مسموح بالدخول
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold"
+                                        >
+                                            ✕ منتهي الصلاحية
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- قائمة الاشتراكات بانتظار التأكيد (عمود واحد) -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+                        <h2 class="text-sm font-bold text-white">بانتظار الاعتماد (شام كاش / كاش)</h2>
+                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-bold">2 معلقة</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div
+                            v-for="sub in pendingSubscriptions"
+                            :key="sub.id"
+                            class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2.5 text-xs"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-white">{{ sub.name }}</span>
+                                <span class="text-amber-400 font-mono font-bold">{{ sub.amount }}</span>
+                            </div>
+
+                            <div class="text-[11px] text-slate-400 flex items-center justify-between">
+                                <span>{{ sub.plan }}</span>
+                                <span class="font-mono text-slate-500">{{ sub.phone }}</span>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                                <span class="text-[10px] text-slate-500 font-mono">المرجع: {{ sub.ref }}</span>
+                                <div class="flex items-center gap-1.5">
+                                    <button class="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-[10px] transition">
+                                        اعتماد
+                                    </button>
+                                    <button class="px-2 py-1 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-400 rounded-lg text-[10px] transition">
+                                        رفض
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </AdminLayout>
+</template>
