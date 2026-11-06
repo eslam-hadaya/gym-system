@@ -12,34 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('check_ins', function (Blueprint $table) {
-                $table->id();
-
-                // ربط حركة الدخول بالعضو
-                $table->foreignId('member_id')
-                      ->constrained('members')
-                      ->cascadeOnDelete();
-
-                // ربط حركة الدخول بعقد الاشتراك الذي تم الدخول بناءً عليه (للتدقيق لاحقاً)
-                $table->foreignId('subscription_id')
-                      ->nullable()
-                      ->constrained('subscriptions')
-                      ->nullOnDelete();
-
-                // التوقيت الزمني الدقيق للدخول (مفهرس للتقارير اليومية والشهرية)
-                $table->timestamp('checked_in_at')->index();
-
-                // نتيجة عملية الفحص على الباب
-                $table->enum('status', [
-                    'granted',           // دخول نظامي واشتراك ساري
-                    'denied_expired',    // اشتراك منتهي
-                    'denied_unpaid',     // اشتراك معلق غير مدفوع
-                    'denied_no_sub'      // لا يملك أي اشتراك
-                ])->default('granted');
-
-                $table->timestamps();
-            });
+            $table->id();
+            $table->foreignId('member_id')->constrained()->cascadeOnDelete();
+            $table->enum('status', ['valid', 'expired', 'invalid_period']);
+            $table->string('note')->nullable();
+            $table->timestamps();
+        });
     }
-
     /**
      * Reverse the migrations.
      */

@@ -12,10 +12,28 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
+        // توجيه ذكي حسب الدور عند محاولة دخول مسارات الـ Guest (login / register)
+        $middleware->redirectGuestsTo(fn (Request $request) => route('login'));
+        $middleware->redirectUsersTo(function (Request $request) {
+            $user = $request->user();
+            if (! $user) {
+                return route('login');
+            }
+
+            return $user->role === 'admin'
+                ? route('admin.dashboard')
+                : route('member.dashboard');
+        });
+
+        // تسجيل الـ Middleware المخصص للأدوار
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
+        //
     })->create();

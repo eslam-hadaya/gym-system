@@ -1,9 +1,23 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user);
+
+const targetUrl = computed(() => {
+    if (!user.value) return '/register';
+    return user.value.role === 'admin' ? '/admin/dashboard' : '/member/dashboard';
+});
+
+const actionLabel = computed(() => {
+    if (!user.value) return 'سجّل اشتراكك الآن';
+    return user.value.role === 'admin' ? 'لوحة تحكم الإدارة' : 'بطاقة دخولي (QR)';
+});
 </script>
 
 <template>
-    <section class="relative overflow-hidden py-24 sm:py-32 px-6 sm:px-12 text-center border-b border-slate-900">
+    <section class="relative overflow-hidden py-24 sm:py-32 px-6 sm:px-12 text-center border-b border-slate-900 select-none" dir="rtl">
         <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-slate-950 to-slate-950 pointer-events-none"></div>
 
         <div class="relative max-w-4xl mx-auto space-y-8">
@@ -25,11 +39,12 @@ import { Link } from '@inertiajs/vue3';
 
             <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
                 <Link
-                    href="/register"
+                    :href="targetUrl"
                     class="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-2xl transition text-base shadow-xl shadow-amber-500/25 hover:scale-[1.02] transform"
                 >
-                    سجّل اشتراكك الآن
+                    {{ actionLabel }}
                 </Link>
+
                 <a
                     href="#about"
                     class="px-8 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-semibold rounded-2xl transition text-base"

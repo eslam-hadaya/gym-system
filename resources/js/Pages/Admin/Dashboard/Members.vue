@@ -1,24 +1,47 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
-const searchQuery = ref('');
-const statusFilter = ref('all');
+const props = defineProps({
+    members: {
+        type: Object,
+        required: true,
+    },
+    filters: {
+        type: Object,
+        default: () => ({ search: '', status: 'all' }),
+    },
+});
 
-const members = ref([
-    { id: 1, name: 'أحمد الإبراهيم', phone: '0988112233', code: 'GYM-1042', gender: 'ذكر', plan: 'باقة 3 أشهر', status: 'active', expiry: '2026-12-15' },
-    { id: 2, name: 'سارة الخطيب', phone: '0933445566', code: 'GYM-1043', gender: 'أنثى', plan: 'باقة شهر واحد', status: 'active', expiry: '2026-11-28' },
-    { id: 3, name: 'عمر زريق', phone: '0944778899', code: 'GYM-1065', gender: 'ذكر', plan: 'باقة شهر واحد', status: 'expired', expiry: '2026-11-03' },
-    { id: 4, name: 'محمود الحلبي', phone: '0955667788', code: 'GYM-1080', gender: 'ذكر', plan: 'لم يشترك بعد', status: 'pending', expiry: '-' },
-]);
+const searchQuery = ref(props.filters.search);
+const statusFilter = ref(props.filters.status);
+let searchTimeout = null;
 
-const filteredMembers = computed(() => {
-    return members.value.filter(m => {
-        const matchesSearch = m.name.includes(searchQuery.value) || m.phone.includes(searchQuery.value) || m.code.includes(searchQuery.value);
-        const matchesStatus = statusFilter.value === 'all' || m.status === statusFilter.value;
-        return matchesSearch && matchesStatus;
-    });
+const applyFilters = () => {
+    router.get(
+        '/admin/dashboard/members',
+        {
+            search: searchQuery.value || undefined,
+            status: statusFilter.value === 'all' ? undefined : statusFilter.value,
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        }
+    );
+};
+
+watch(searchQuery, () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applyFilters();
+    }, 300);
+});
+
+watch(statusFilter, () => {
+    applyFilters();
 });
 </script>
 
@@ -33,13 +56,13 @@ const filteredMembers = computed(() => {
                     <h1 class="text-2xl font-black text-white">إدارة اللاعبين والأعضاء</h1>
                     <p class="text-xs text-slate-400 mt-1">عرض وتعديل بيانات المشتركين وتتبع صلاحية العضويات</p>
                 </div>
-                <button
-                    type="button"
-                    class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/20 cursor-pointer"
+                <Link
+                    href="/admin/dashboard/members/create"
+                    class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/20"
                 >
                     <span>+</span>
                     <span>إضافة لاعب يدوي</span>
-                </button>
+                </Link>
             </div>
 
             <!-- شريط البحث والتصفية -->
@@ -80,7 +103,7 @@ const filteredMembers = computed(() => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                            <tr v-for="member in filteredMembers" :key="member.id" class="hover:bg-slate-800/30 transition">
+                            <tr v-for="member in members.data" :key="member.id" class="hover:bg-slate-800/30 transition">
                                 <td class="py-3.5 px-4 font-mono font-bold text-amber-400">{{ member.code }}</td>
                                 <td class="py-3.5 px-4 font-bold text-white">{{ member.name }}</td>
                                 <td class="py-3.5 px-4 font-mono text-slate-400" dir="ltr">{{ member.phone }}</td>
@@ -112,18 +135,34 @@ const filteredMembers = computed(() => {
                                     </span>
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
-                                    <button class="px-2.5 py-1 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 rounded-lg text-[10px] font-bold transition">
-                                        تجديد اشتراك
-                                    </button>
+                                    <Link
+                                        :href="`/admin/dashboard/finance?member=${member.code}`"
+                                        class="px-2.5 py-1 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 rounded-lg text-[10px] font-bold transition inline-block"
+                                    >
+                                        سجل الاشتراكات
+                                    </Link>
                                 </td>
                             </tr>
-                            <tr v-if="filteredMembers.length === 0">
+                            <tr v-if="members.data.length === 0">
                                 <td colspan="8" class="py-8 text-center text-slate-500 text-xs">
                                     لا يوجد لاعب يطابق معايير البحث.
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- الترقيم (Pagination) -->
+                <div v-if="members.links && members.links.length > 3" class="p-4 border-t border-slate-800 flex justify-center gap-1">
+                    <Link
+                        v-for="(link, index) in members.links"
+                        :key="index"
+                        :href="link.url || '#'"
+                        v-html="link.label"
+                        class="px-3 py-1 text-xs rounded-lg border transition"
+                        :class="link.active ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'"
+                        :disabled="!link.url"
+                    />
                 </div>
             </div>
         </div>

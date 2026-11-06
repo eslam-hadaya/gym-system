@@ -1,96 +1,113 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import MemberLayout from '@/Layouts/MemberLayout.vue';
+import QrDisplayCard from '@/Pages/Member/Dashboard/Index.vue';
 
-const memberData = ref({
-    name: 'أحمد الإبراهيم',
-    member_code: 'GYM-1042',
-    phone: '0988112233',
-    gender: 'ذكر',
-    period_label: 'فترة الرجال (02:00 م - 11:30 م)',
-    plan: 'باقة 3 أشهر',
-    status: 'active',
-    days_left: 42,
-    start_date: '2026-10-01',
-    end_date: '2026-12-15',
+defineProps({
+    member: {
+        type: Object,
+        required: true,
+    },
+    subscription: {
+        type: Object,
+        default: null,
+    },
+    recentCheckIns: {
+        type: Array,
+        default: () => [],
+    },
 });
 </script>
 
 <template>
-    <Head title="بطاقة العضوية الرقمية" />
-
     <MemberLayout>
-        <div class="space-y-8">
-            <div class="flex items-center justify-between">
+        <div class="space-y-6">
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 p-6 rounded-3xl border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-black text-white">بطاقتي الرقمية</h1>
-                    <p class="text-xs text-slate-400 mt-1">وجّه شاشة الهاتف مباشرة نحو كاميرا الباب لتسجيل الدخول السريع</p>
+                    <h2 class="text-lg font-black text-white">أهلاً بك يا بطل، {{ member.name }} 👋</h2>
+                    <p class="text-xs text-slate-400 mt-1">
+                        {{ member.gender === 'male' ? 'فترة التدريب: مسائية (رجال)' : 'فترة التدريب: صباحية (سيدات)' }}
+                    </p>
                 </div>
-                <Link
-                    href="/member/dashboard/subscriptions"
-                    class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition"
-                >
-                    تجديد اشتراكي
-                </Link>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">حالة الحساب:</span>
+                    <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                        {{ member.status === 'active' ? 'نشط ومصرح بالدخول' : 'بانتظار الاشتراك' }}
+                    </span>
+                </div>
             </div>
 
-            <!-- بطاقة العضوية الرقمية (Gym Pass) -->
-            <div class="max-w-md mx-auto bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
-                <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
-
-                <!-- الهيدر الداخلي للبطاقة -->
-                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-sm">🏋️</span>
-                        <div>
-                            <span class="text-xs font-black text-white block">نادي الأبطال</span>
-                            <span class="text-[9px] text-amber-400 font-mono">DIGITAL MEMBER PASS</span>
-                        </div>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                        {{ memberData.status === 'active' ? 'اشتراك سارٍ' : 'منتهي' }}
-                    </span>
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                <!-- QR Pass Card (Left / Top on mobile) -->
+                <div class="md:col-span-5">
+                    <QrDisplayCard
+                        :member-code="member.member_code"
+                        :member-name="member.name"
+                        :plan-name="subscription?.plan_name || 'لا يوجد اشتراك مفعل'"
+                        :status="member.status"
+                    />
                 </div>
 
-                <!-- مساحة رمز الـ QR عالي التباين للقارئ -->
-                <div class="bg-white rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 shadow-inner">
-                    <!-- محاكي QR عالي الوضوح -->
-                    <div class="w-48 h-48 border-4 border-slate-950 rounded-xl p-2 flex flex-col justify-between">
-                        <div class="flex justify-between">
-                            <div class="w-10 h-10 border-4 border-black p-1"><div class="w-full h-full bg-black"></div></div>
-                            <div class="w-10 h-10 border-4 border-black p-1"><div class="w-full h-full bg-black"></div></div>
+                <!-- Stats & Recent Activity (Right) -->
+                <div class="md:col-span-7 space-y-6">
+                    <!-- Subscription Status Box -->
+                    <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <span>📅</span>
+                                <span>تفاصيل الاشتراك الحالي</span>
+                            </h3>
+                            <span v-if="subscription" class="text-xs font-mono font-bold text-amber-400">
+                                ينتهي في: {{ subscription.end_date }}
+                            </span>
                         </div>
-                        <div class="text-center font-mono font-black text-slate-950 text-sm tracking-widest py-3">
-                            {{ memberData.member_code }}
-                        </div>
-                        <div class="flex justify-between">
-                            <div class="w-10 h-10 border-4 border-black p-1"><div class="w-full h-full bg-black"></div></div>
-                            <div class="w-6 h-6 bg-black self-end"></div>
-                        </div>
-                    </div>
-                    <span class="text-[11px] font-mono font-bold text-slate-900 tracking-wider">
-                        {{ memberData.member_code }}
-                    </span>
-                </div>
 
-                <!-- تفاصيل اللاعب والاشتراك -->
-                <div class="space-y-3 text-xs pt-2">
-                    <div class="flex justify-between items-center text-slate-400">
-                        <span>اسم اللاعب:</span>
-                        <strong class="text-white">{{ memberData.name }}</strong>
+                        <div v-if="subscription" class="grid grid-cols-2 gap-4 pt-2">
+                            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800/80">
+                                <span class="text-[11px] text-slate-400 block mb-1">الباقة المشترك بها</span>
+                                <span class="text-sm font-bold text-white">{{ subscription.plan_name }}</span>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800/80">
+                                <span class="text-[11px] text-slate-400 block mb-1">الأيام المتبقية</span>
+                                <span class="text-xl font-black text-amber-400 font-mono">{{ subscription.remaining_days }} يوم</span>
+                            </div>
+                        </div>
+
+                        <div v-else class="p-6 text-center rounded-2xl bg-slate-950/50 border border-dashed border-slate-800">
+                            <p class="text-xs text-slate-400">ليس لديك باقة تدريب نشطة حالياً</p>
+                            <a href="/member/dashboard/subscriptions" class="inline-block mt-3 text-xs font-bold text-amber-400 hover:underline">
+                                تصفح الباقات واشترك الآن ←
+                            </a>
+                        </div>
                     </div>
-                    <div class="flex justify-between items-center text-slate-400">
-                        <span>الباقة الحالية:</span>
-                        <span class="text-amber-400 font-semibold">{{ memberData.plan }}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-slate-400">
-                        <span>الأيام المتبقية:</span>
-                        <span class="font-mono font-bold text-white">{{ memberData.days_left }} يوم</span>
-                    </div>
-                    <div class="flex justify-between items-center text-slate-400 border-t border-slate-800 pt-3">
-                        <span>فترة دوام الصالة:</span>
-                        <span class="text-slate-300">{{ memberData.period_label }}</span>
+
+                    <!-- Recent Check-ins -->
+                    <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span>⏱️</span>
+                            <span>آخر حركات تسجيل الدخول بالصالة</span>
+                        </h3>
+
+                        <div v-if="recentCheckIns.length > 0" class="space-y-2">
+                            <div
+                                v-for="checkIn in recentCheckIns"
+                                :key="checkIn.id"
+                                class="flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs"
+                            >
+                                <span class="text-slate-300 font-mono">{{ checkIn.created_at }}</span>
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="checkIn.status === 'valid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'"
+                                >
+                                    {{ checkIn.status === 'valid' ? 'دخول نظامي' : 'مرفوض' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div v-else class="text-center py-6 text-xs text-slate-500">
+                            لا توجد حركات تسجيل دخول مسجلة بعد
+                        </div>
                     </div>
                 </div>
             </div>

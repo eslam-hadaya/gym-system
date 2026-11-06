@@ -4,11 +4,13 @@ import { computed } from 'vue';
 
 const page = usePage();
 
-// قراءة بيانات المستخدم الحالي من الـ props المشتركة
-const user = computed(() => page.props.auth?.user || { name: 'المدير العام', email: 'admin@gym.com' });
+const user = computed(() => page.props.auth?.user || {
+    name: 'المدير العام',
+    email: 'admin@gym.sy'
+});
 
-// فحص المسار الحالي لتمييز التبويب النشط
 const currentUrl = computed(() => page.url);
+
 const isActive = (url) => {
     if (url === '/admin/dashboard') {
         return currentUrl.value === '/admin/dashboard';
@@ -16,44 +18,43 @@ const isActive = (url) => {
     return currentUrl.value.startsWith(url);
 };
 
-// عناصر التنقل الخاصة بالأدمن
 const navItems = [
     {
         name: 'نظرة عامة',
         url: '/admin/dashboard',
         icon: '📊',
-        badge: null
+        badge: null,
     },
     {
         name: 'إدارة اللاعبين',
         url: '/admin/dashboard/members',
         icon: '👥',
-        badge: null
+        badge: null,
     },
     {
         name: 'مكتب الاستقبال (QR)',
         url: '/admin/dashboard/checkin',
         icon: '📷',
-        badge: 'سريع'
+        badge: 'سريع',
     },
     {
         name: 'الباقات والأسعار',
         url: '/admin/dashboard/plans',
         icon: '💳',
-        badge: null
+        badge: null,
     },
     {
         name: 'الصندوق وشام كاش',
         url: '/admin/dashboard/finance',
         icon: '💰',
-        badge: null
-    }
+        badge: null,
+    },
 ];
 </script>
 
 <template>
-    <!-- السايدبار مثبت على جهة اليسار (Border على اليمين ليفصل المحتوى) -->
-    <aside class="w-64 bg-slate-900/95 border-r border-slate-800 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none">
+    <!-- سايدبار مثبت على اليمين في واجهات RTL مع فاصل يساري -->
+    <aside class="w-64 bg-slate-900/95 border-l border-slate-800 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none" dir="rtl">
         <div>
             <!-- ترويسة السايدبار والشعار -->
             <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800/80">
@@ -92,7 +93,6 @@ const navItems = [
                         <span>{{ item.name }}</span>
                     </div>
 
-                    <!-- شارة سريعة إن وجدت -->
                     <span
                         v-if="item.badge"
                         :class="[
@@ -108,7 +108,7 @@ const navItems = [
             </nav>
         </div>
 
-        <!-- الجزء السفلي: معلومات المدير وزر تسجيل الخروج -->
+        <!-- الجزء السفلي: هوية المدير وزر تسجيل الخروج -->
         <div class="p-4 border-t border-slate-800/80 bg-slate-950/30">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2.5 min-w-0">
@@ -117,7 +117,7 @@ const navItems = [
                     </div>
                     <div class="truncate">
                         <p class="text-xs font-bold text-white truncate">{{ user.name }}</p>
-                        <p class="text-[10px] text-amber-500 font-medium">مسؤول النظام</p>
+                        <p class="text-[10px] text-amber-400 font-medium">مسؤول النظام</p>
                     </div>
                 </div>
 

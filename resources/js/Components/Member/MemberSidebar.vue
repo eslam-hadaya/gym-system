@@ -4,7 +4,8 @@ import { computed } from 'vue';
 
 const page = usePage();
 
-const user = computed(() => page.props.auth?.user || { name: 'اللاعب', email: 'member@gym.com' });
+const user = computed(() => page.props.auth?.user || { name: 'اللاعب' });
+const member = computed(() => page.props.member || null);
 
 const currentUrl = computed(() => page.url);
 const isActive = (url) => {
@@ -14,32 +15,31 @@ const isActive = (url) => {
     return currentUrl.value.startsWith(url);
 };
 
-// عناصر التنقل الخاصة باللاعب
 const navItems = [
     {
         name: 'بطاقتي الرقمية (QR)',
         url: '/member/dashboard',
         icon: '📱',
-        badge: 'الكود'
+        badge: 'الكود',
     },
     {
         name: 'اشتراكي والتجديد',
         url: '/member/dashboard/subscriptions',
         icon: '💳',
-        badge: null
+        badge: null,
     },
     {
         name: 'سجل حركات الحضور',
         url: '/member/dashboard/history',
         icon: '🕒',
-        badge: null
-    }
+        badge: null,
+    },
 ];
 </script>
 
 <template>
-    <!-- السايدبار مثبت على جهة اليسار -->
-    <aside class="w-64 bg-slate-900/95 border-r border-slate-800 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none">
+    <!-- سايدبار مثبت على جهة اليمين في بيئة RTL -->
+    <aside class="w-64 bg-slate-900/95 border-l border-slate-800 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none" dir="rtl">
         <div>
             <!-- ترويسة السايدبار والشعار -->
             <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800/80">
@@ -48,8 +48,8 @@ const navItems = [
                 </span>
                 <div class="overflow-hidden">
                     <h2 class="text-sm font-black text-white tracking-wide truncate">نادي الأبطال</h2>
-                    <span class="text-[10px] text-slate-400 font-mono font-medium block">
-                        بوابة الأعضاء
+                    <span class="text-[10px] text-amber-400/90 font-mono font-medium block">
+                        بوابة اللاعب الرياضي
                     </span>
                 </div>
             </div>
@@ -57,7 +57,7 @@ const navItems = [
             <!-- قائمة التبويبات -->
             <nav class="p-4 space-y-1.5 text-xs font-semibold">
                 <div class="text-[10px] font-bold text-slate-500 px-3 py-2 uppercase tracking-wider">
-                    حسابي الرياضي
+                    حسابي والخدمات
                 </div>
 
                 <Link
@@ -97,12 +97,14 @@ const navItems = [
         <div class="p-4 border-t border-slate-800/80 bg-slate-950/30">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/60 text-slate-200 font-bold flex items-center justify-center text-xs shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/60 text-amber-400 font-bold flex items-center justify-center text-xs shrink-0">
                         🏃
                     </div>
                     <div class="truncate">
                         <p class="text-xs font-bold text-white truncate">{{ user.name }}</p>
-                        <p class="text-[10px] text-emerald-400 font-medium">عضو مسجل</p>
+                        <p class="text-[10px] text-amber-400 font-mono font-medium truncate">
+                            {{ member?.member_code || 'مشترك رياضي' }}
+                        </p>
                     </div>
                 </div>
 

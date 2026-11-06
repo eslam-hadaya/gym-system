@@ -1,188 +1,192 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import QRCode from 'qrcode';
 
 const props = defineProps({
     memberCode: {
         type: String,
         required: true,
-        default: 'GYM-1042',
     },
     memberName: {
         type: String,
         required: true,
-        default: 'عضو مسجل',
     },
     planName: {
         type: String,
-        default: 'اشتراك شهري',
+        default: 'لا يوجد اشتراك نشط',
     },
-    expiryDate: {
+    status: {
         type: String,
-        default: '2026-12-31',
-    },
-    isActive: {
-        type: Boolean,
-        default: true,
+        default: 'pending',
     },
 });
 
-const isExporting = ref(false);
+const qrCanvas = ref(null);
+const isGenerating = ref(false);
 
-const downloadQrImage = () => {
-    isExporting.value = true;
+const generateQr = async () => {
+    if (!qrCanvas.value) return;
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    // أبعاد البطاقة العالية الدقة
-    canvas.width = 700;
-    canvas.height = 950;
-
-    // الخلفية المتدرجة الفخمة
-    const gradient = ctx.createLinearGradient(0, 0, 700, 950);
-    gradient.addColorStop(0, '#090d16');
-    gradient.addColorStop(0.5, '#020617');
-    gradient.addColorStop(1, '#1b1202');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 700, 950);
-
-    // إطار ذهبي
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(25, 25, 650, 900);
-
-    // الهيدر
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 32px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('🏋️ نادي الأبطال الرياضي', 350, 90);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '14px monospace';
-    ctx.fillText('DIGITAL ENTRY QR PASS', 350, 120);
-
-    // صندوق الـ QR الأبيض
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(150, 160, 400, 400, 20);
-    ctx.fill();
-
-    // رسم عناصر الباركود المتباين
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(190, 200, 80, 80);
-    ctx.clearRect(205, 215, 50, 50);
-    ctx.fillRect(220, 230, 20, 20);
-
-    ctx.fillRect(430, 200, 80, 80);
-    ctx.clearRect(445, 215, 50, 50);
-    ctx.fillRect(460, 230, 20, 20);
-
-    ctx.fillRect(190, 440, 80, 80);
-    ctx.clearRect(205, 455, 50, 50);
-    ctx.fillRect(220, 470, 20, 20);
-
-    // بيانات وسطية
-    ctx.fillRect(310, 210, 30, 30);
-    ctx.fillRect(370, 250, 40, 30);
-    ctx.fillRect(300, 310, 50, 40);
-    ctx.fillRect(380, 330, 30, 50);
-    ctx.fillRect(320, 400, 70, 30);
-    ctx.fillRect(430, 420, 40, 40);
-    ctx.fillRect(360, 470, 40, 30);
-    ctx.fillRect(450, 500, 40, 40);
-
-    // الكود تحت الـ QR
-    ctx.fillStyle = '#020617';
-    ctx.font = 'bold 24px monospace';
-    ctx.fillText(props.memberCode, 350, 535);
-
-    // بيانات العضو
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '18px sans-serif';
-    ctx.fillText('الاسم:', 580, 630);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(props.memberName, 380, 630);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '18px sans-serif';
-    ctx.fillText('الباقة:', 580, 680);
-    ctx.fillStyle = '#f59e0b';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText(props.planName, 380, 680);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '18px sans-serif';
-    ctx.fillText('الصلاحية:', 580, 730);
-    ctx.fillStyle = props.isActive ? '#10b981' : '#f43f5e';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText(props.isActive ? `ساري حتى ${props.expiryDate}` : 'منتهي الصلاحية', 380, 730);
-
-    // الفوتر
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#64748b';
-    ctx.font = '13px sans-serif';
-    ctx.fillText('امسح هذا الرمز أمام الكاميرا عند بوابة النادي للدخول الفوري', 350, 840);
-
-    setTimeout(() => {
-        const link = document.createElement('a');
-        link.download = `QR-Pass-${props.memberCode}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        isExporting.value = false;
-    }, 200);
+    try {
+        await QRCode.toCanvas(qrCanvas.value, props.memberCode, {
+            width: 220,
+            margin: 1,
+            color: {
+                dark: '#020617',
+                light: '#ffffff',
+            },
+        });
+    } catch (err) {
+        console.error('QR Render Error:', err);
+    }
 };
+
+const downloadCard = async () => {
+    isGenerating.value = true;
+
+    try {
+        const offscreenCanvas = document.createElement('canvas');
+        const ctx = offscreenCanvas.getContext('2d');
+        const width = 800;
+        const height = 1100;
+
+        offscreenCanvas.width = width;
+        offscreenCanvas.height = height;
+
+        // Background Gradient
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#090d16');
+        grad.addColorStop(1, '#020617');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Border Glow
+        ctx.lineWidth = 12;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.strokeRect(30, 30, width - 60, height - 60);
+
+        // Header Title
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = 'bold 44px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('نادي الأبطال الرياضي', width / 2, 120);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '22px sans-serif';
+        ctx.fillText('بطاقة الدخول الإلكترونية المعتمدة', width / 2, 165);
+
+        // Member Info Box
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.roundRect(80, 210, width - 160, 160, 24);
+        ctx.fill();
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText(props.memberName, width / 2, 275);
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = 'bold 24px monospace';
+        ctx.fillText(props.memberCode, width / 2, 325);
+
+        // QR Code Container
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(160, 420, 480, 480, 32);
+        ctx.fill();
+
+        // Draw High-Res QR directly
+        const qrImage = new Image();
+        const qrDataUrl = await QRCode.toDataURL(props.memberCode, {
+            width: 420,
+            margin: 1,
+            color: {
+                dark: '#020617',
+                light: '#ffffff',
+            },
+        });
+
+        await new Promise((resolve) => {
+            qrImage.onload = () => {
+                ctx.drawImage(qrImage, 190, 450, 420, 420);
+                resolve();
+            };
+            qrImage.src = qrDataUrl;
+        });
+
+        // Plan Badge
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.roundRect(140, 930, width - 280, 60, 16);
+        ctx.fill();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText(`الباقة: ${props.planName}`, width / 2, 968);
+
+        // Footer Note
+        ctx.fillStyle = '#64748b';
+        ctx.font = '18px sans-serif';
+        ctx.fillText('أبرز هذا الرمز عند البوابة الإلكترونية لتسجيل الحضور', width / 2, 1035);
+
+        // Export as PNG
+        const link = document.createElement('a');
+        link.download = `GYM-PASS-${props.memberCode}.png`;
+        link.href = offscreenCanvas.toDataURL('image/png');
+        link.click();
+    } finally {
+        isGenerating.value = false;
+    }
+};
+
+onMounted(() => {
+    generateQr();
+});
+
+watch(() => props.memberCode, () => {
+    generateQr();
+});
 </script>
 
 <template>
-    <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/20 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden max-w-sm mx-auto text-center">
-        <!-- شريط الحالة العلوي -->
-        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-            <span class="text-xs font-bold text-white flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full" :class="isActive ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'"></span>
-                <span>{{ isActive ? 'كود دخول نشط' : 'كود غير مفعل' }}</span>
-            </span>
-            <span class="text-[10px] font-mono text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                {{ memberCode }}
-            </span>
-        </div>
+    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <!-- صندوق الـ QR الأبيض للقراءة السريعة بالضوء -->
-        <div class="bg-white rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <div class="w-44 h-44 border-4 border-slate-950 rounded-xl p-2 flex flex-col justify-between">
-                <div class="flex justify-between">
-                    <div class="w-9 h-9 border-4 border-black p-0.5"><div class="w-full h-full bg-black"></div></div>
-                    <div class="w-9 h-9 border-4 border-black p-0.5"><div class="w-full h-full bg-black"></div></div>
-                </div>
-                <div class="text-center font-mono font-black text-slate-950 text-xs tracking-widest py-2">
-                    {{ memberCode }}
-                </div>
-                <div class="flex justify-between">
-                    <div class="w-9 h-9 border-4 border-black p-0.5"><div class="w-full h-full bg-black"></div></div>
-                    <div class="w-5 h-5 bg-black self-end"></div>
-                </div>
+        <div class="w-full flex items-center justify-between pb-4 border-b border-slate-800">
+            <div class="text-right">
+                <span class="text-[10px] text-slate-400 font-semibold block">كود العضوية</span>
+                <span class="font-mono text-sm font-black text-amber-400">{{ memberCode }}</span>
             </div>
-            <span class="text-[11px] font-mono font-bold text-slate-900">
-                {{ memberCode }}
-            </span>
+            <div
+                class="px-3 py-1 rounded-full text-[11px] font-bold border"
+                :class="status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'"
+            >
+                {{ status === 'active' ? 'مشترك نشط' : 'بانتظار التفعيل' }}
+            </div>
         </div>
 
-        <!-- بيانات العضو السريعة -->
-        <div class="space-y-1.5 text-xs text-slate-300">
-            <p class="font-bold text-white text-sm">{{ memberName }}</p>
-            <p class="text-slate-400 text-[11px]">{{ planName }}</p>
+        <div class="my-6 p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center">
+            <canvas ref="qrCanvas" class="max-w-full h-auto"></canvas>
         </div>
 
-        <!-- زر التنزيل المباشر كصورة -->
+        <div class="space-y-1 mb-6">
+            <h3 class="text-base font-bold text-white">{{ memberName }}</h3>
+            <p class="text-xs text-slate-400">{{ planName }}</p>
+        </div>
+
         <button
             type="button"
-            @click="downloadQrImage"
-            :disabled="isExporting"
-            class="w-full py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
+            @click="downloadCard"
+            :disabled="isGenerating"
+            class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer"
         >
-            <span>{{ isExporting ? '⏳' : '📥' }}</span>
-            <span>{{ isExporting ? 'جاري تجهيز الصورة...' : 'حفظ كود الدخول كصورة (PNG)' }}</span>
+            <span v-if="isGenerating" class="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
+            <span v-else>💾</span>
+            <span>تحميل بطاقة الدخول (PNG)</span>
         </button>
+        <p class="text-[10px] text-slate-500 mt-2">احفظ البطاقة على جهازك لفتحها عند الباب دون الحاجة لاتصال إنترنت</p>
     </div>
 </template>

@@ -6,6 +6,12 @@ import HeroSection from '@/Components/Welcome/HeroSection.vue';
 import AboutSection from '@/Components/Welcome/AboutSection.vue';
 import FeaturesSection from '@/Components/Welcome/FeaturesSection.vue';
 import PlansSection from '@/Components/Welcome/PlansSection.vue';
+defineProps({
+    plans: {
+        type: Array,
+        default: () => [],
+    },
+});
 </script>
 
 <template>
@@ -20,7 +26,7 @@ import PlansSection from '@/Components/Welcome/PlansSection.vue';
             <HeroSection />
             <AboutSection />
             <FeaturesSection />
-            <PlansSection />
+            <PlansSection :plans="plans" />
         </main>
 
         <!-- 3. الفوتر -->

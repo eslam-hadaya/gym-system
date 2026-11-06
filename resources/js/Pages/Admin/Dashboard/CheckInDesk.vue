@@ -1,167 +1,165 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
-// بيانات تجريبية تحاكي ما سيتم تمريره من الـ Controller لاحقاً
-const stats = [
-    { label: 'إجمالي الأعضاء', value: '528', change: '+12 هذا الشهر', icon: '👥', color: 'text-blue-400' },
-    { label: 'اشتراكات سارية', value: '410', change: '77% نسبة الالتزام', icon: '⚡', color: 'text-amber-400' },
-    { label: 'حضور اليوم بالـ QR', value: '94', change: 'ذروة مسائية متوقعة', icon: '📷', color: 'text-emerald-400' },
-    { label: 'إيراد اليوم التقديري', value: '650,000 ل.س', change: 'كاش + شام كاش', icon: '💰', color: 'text-emerald-400' },
-];
+const props = defineProps({
+    todayLogs: {
+        type: Array,
+        default: () => [],
+    },
+    stats: {
+        type: Object,
+        default: () => ({
+            total_today: 0,
+            valid_count: 0,
+            rejected_count: 0,
+        }),
+    },
+});
 
-const recentCheckIns = [
-    { id: 1, name: 'أحمد الإبراهيم', code: 'GYM-1042', plan: 'باقة 3 أشهر', time: 'منذ 4 دقائق', gender: 'ذكر', status: 'valid' },
-    { id: 2, name: 'سامر قواس', code: 'GYM-1011', plan: 'باقة شهر واحد', time: 'منذ 14 دقيقة', gender: 'ذكر', status: 'valid' },
-    { id: 3, name: 'محمد الصباغ', code: 'GYM-0988', plan: 'الباقة السنوية VIP', time: 'منذ 28 دقيقة', gender: 'ذكر', status: 'valid' },
-    { id: 4, name: 'عمر زريق', code: 'GYM-1065', plan: 'باقة شهر واحد', time: 'منذ 35 دقيقة', gender: 'ذكر', status: 'expired' },
-];
+const scanInputRef = ref(null);
 
-const pendingSubscriptions = [
-    { id: 101, name: 'باسل كنعان', phone: '0933112233', plan: 'باقة 3 أشهر', method: 'Sham Cash', ref: 'TXN-984210', amount: '400,000 ل.س' },
-    { id: 102, name: 'محمود الحلبي', phone: '0944556677', plan: 'باقة شهر واحد', method: 'Cash Desk', ref: 'يدوي', amount: '150,000 ل.س' },
-];
+const form = useForm({
+    member_code: '',
+});
+
+const handleScan = () => {
+    if (!form.member_code) return;
+
+    form.post('/admin/dashboard/checkin/scan', {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset('member_code');
+            scanInputRef.value?.focus();
+        },
+        onError: () => {
+            scanInputRef.value?.focus();
+        },
+    });
+};
 </script>
 
 <template>
-    <Head title="لوحة التحكم الرئيسية - الإدارة" />
+    <Head title="مكتب الاستقبال وماسح الـ QR" />
 
     <AdminLayout>
-        <div class="space-y-8">
-            <!-- 1. شريط الترحيب والإجراءات السريعة -->
+        <div class="space-y-6">
+            <!-- الترويسة -->
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-black text-white tracking-tight">نظرة عامة على الصالة</h1>
-                    <p class="text-xs text-slate-400 mt-1">متابعة التدفق الحي لدخول اللاعبين والعمليات المالية</p>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <Link
-                        href="/admin/dashboard/checkin"
-                        class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/20"
-                    >
-                        <span>📷</span>
-                        <span>فتح مكتب ماسح الـ QR</span>
-                    </Link>
-
-                    <Link
-                        href="/admin/dashboard/members"
-                        class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl text-xs font-semibold transition"
-                    >
-                        + تسجيل لاعب يدوي
-                    </Link>
+                    <h1 class="text-2xl font-black text-white tracking-tight">مكتب استقبال وفحص بطاقات الدخول</h1>
+                    <p class="text-xs text-slate-400 mt-1">مسح بطاقات الـ QR للاعبين والتحقق الفوري من صلاحية الاشتراك وفترة التدريب</p>
                 </div>
             </div>
 
-            <!-- 2. بطاقات الإحصائيات الأربع -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div
-                    v-for="(stat, idx) in stats"
-                    :key="idx"
-                    class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md space-y-3 relative overflow-hidden group hover:border-slate-700 transition"
-                >
-                    <div class="flex items-center justify-between text-slate-400">
-                        <span class="text-xs font-medium">{{ stat.label }}</span>
-                        <span class="text-lg p-2 rounded-xl bg-slate-950/60 border border-slate-800">{{ stat.icon }}</span>
-                    </div>
-
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-2xl font-black text-white tracking-tight">{{ stat.value }}</span>
-                        <span :class="['text-[11px] font-semibold', stat.color]">{{ stat.change }}</span>
-                    </div>
+            <!-- بطاقات مؤشرات الحضور لليوم -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span class="text-xs text-slate-400">إجمالي الحضور اليوم</span>
+                    <p class="text-2xl font-black text-white font-mono">{{ stats.total_today ?? 0 }}</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span class="text-xs text-slate-400">دخول نظامي ومصرح</span>
+                    <p class="text-2xl font-black text-emerald-400 font-mono">{{ stats.valid_count ?? 0 }}</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span class="text-xs text-slate-400">محاولات مرفوضة (منتهي / مخالف)</span>
+                    <p class="text-2xl font-black text-rose-400 font-mono">{{ stats.rejected_count ?? 0 }}</p>
                 </div>
             </div>
 
-            <!-- 3. شبكة الجداول: حضور اليوم وطلبات الاعتماد -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- جدول آخر حركات الدخول الحي (2 أعمدة) -->
-                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <h2 class="text-sm font-bold text-white">آخر حركات الدخول (سجل الباب الحي)</h2>
-                        </div>
-                        <span class="text-[11px] text-slate-500 font-mono">تحديث لحظي</span>
+            <!-- حقل المسح السريع بالباركود أو الإدخال اليدوي -->
+            <div class="p-6 rounded-3xl bg-slate-900/90 border border-amber-500/30 shadow-2xl relative overflow-hidden">
+                <div class="max-w-xl mx-auto space-y-4 text-center">
+                    <div class="w-12 h-12 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-2xl flex items-center justify-center text-xl mx-auto">
+                        📷
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">مسح كود اللاعب (Barcode / QR Scanner)</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">وجّه قارئ الباركود أو اكتب كود العضوية واضغط Enter</p>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-right text-xs">
-                            <thead class="text-slate-400 font-semibold border-b border-slate-800/60">
-                                <tr>
-                                    <th class="py-3 px-2">اللاعب</th>
-                                    <th class="py-3 px-2">كود العضوية</th>
-                                    <th class="py-3 px-2">نوع الباقة</th>
-                                    <th class="py-3 px-2">الوقت</th>
-                                    <th class="py-3 px-2">حالة الباب</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/40 text-slate-300">
-                                <tr v-for="entry in recentCheckIns" :key="entry.id" class="hover:bg-slate-800/30 transition">
-                                    <td class="py-3.5 px-2 font-bold text-white flex items-center gap-2">
-                                        <span class="w-6 h-6 rounded-lg bg-slate-800 text-[11px] flex items-center justify-center">
-                                            {{ entry.gender === 'ذكر' ? '🚹' : '🚺' }}
-                                        </span>
-                                        <span>{{ entry.name }}</span>
-                                    </td>
-                                    <td class="py-3.5 px-2 font-mono text-slate-400">{{ entry.code }}</td>
-                                    <td class="py-3.5 px-2 text-slate-400">{{ entry.plan }}</td>
-                                    <td class="py-3.5 px-2 text-slate-500">{{ entry.time }}</td>
-                                    <td class="py-3.5 px-2">
-                                        <span
-                                            v-if="entry.status === 'valid'"
-                                            class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold"
-                                        >
-                                            ✓ مسموح بالدخول
-                                        </span>
-                                        <span
-                                            v-else
-                                            class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold"
-                                        >
-                                            ✕ منتهي الصلاحية
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- قائمة الاشتراكات بانتظار التأكيد (عمود واحد) -->
-                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
-                        <h2 class="text-sm font-bold text-white">بانتظار الاعتماد (شام كاش / كاش)</h2>
-                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-bold">2 معلقة</span>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div
-                            v-for="sub in pendingSubscriptions"
-                            :key="sub.id"
-                            class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2.5 text-xs"
+                    <form @submit.prevent="handleScan" class="flex gap-2">
+                        <input
+                            ref="scanInputRef"
+                            v-model="form.member_code"
+                            type="text"
+                            placeholder="مثال: GYM-1001"
+                            autofocus
+                            class="flex-1 px-4 py-3 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl text-sm font-mono text-white placeholder-slate-600 outline-none transition uppercase"
+                            :class="{ 'border-rose-500': form.errors.member_code }"
+                        />
+                        <button
+                            type="submit"
+                            :disabled="form.processing || !form.member_code"
+                            class="px-6 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-2"
                         >
-                            <div class="flex items-center justify-between">
-                                <span class="font-bold text-white">{{ sub.name }}</span>
-                                <span class="text-amber-400 font-mono font-bold">{{ sub.amount }}</span>
-                            </div>
+                            <span v-if="form.processing" class="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
+                            <span>فحص الباب</span>
+                        </button>
+                    </form>
 
-                            <div class="text-[11px] text-slate-400 flex items-center justify-between">
-                                <span>{{ sub.plan }}</span>
-                                <span class="font-mono text-slate-500">{{ sub.phone }}</span>
-                            </div>
+                    <p v-if="form.errors.member_code" class="text-xs text-rose-400 font-medium">
+                        {{ form.errors.member_code }}
+                    </p>
+                </div>
+            </div>
 
-                            <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-                                <span class="text-[10px] text-slate-500 font-mono">المرجع: {{ sub.ref }}</span>
-                                <div class="flex items-center gap-1.5">
-                                    <button class="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-[10px] transition">
-                                        اعتماد
-                                    </button>
-                                    <button class="px-2 py-1 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-400 rounded-lg text-[10px] transition">
-                                        رفض
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- جدول حركات المسح المسجلة اليوم -->
+            <div class="rounded-2xl bg-slate-900/60 border border-slate-800 overflow-hidden">
+                <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-white">سجل الدخول المسجل اليوم (Check-ins Log)</h3>
+                    <span class="text-[10px] font-mono text-slate-500">
+                        {{ (todayLogs && todayLogs.length) ? `${todayLogs.length} حركة` : 'لا توجد حركات' }}
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">الوقت</th>
+                                <th class="py-3 px-4">كود العضوية</th>
+                                <th class="py-3 px-4">اللاعب</th>
+                                <th class="py-3 px-4">الفترة</th>
+                                <th class="py-3 px-4">الباقة</th>
+                                <th class="py-3 px-4">القرار الأمني</th>
+                                <th class="py-3 px-4">ملاحظة</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                            <tr v-if="!todayLogs || todayLogs.length === 0">
+                                <td colspan="7" class="py-8 text-center text-slate-500 text-xs">
+                                    لم تسجل أي حركة دخول عبر ماسح الباب اليوم حتى الآن
+                                </td>
+                            </tr>
+                            <tr v-for="log in (todayLogs || [])" :key="log.id" class="hover:bg-slate-800/30 transition">
+                                <td class="py-3 px-4 font-mono text-amber-400">{{ log.time }}</td>
+                                <td class="py-3 px-4 font-mono font-bold text-white">{{ log.code }}</td>
+                                <td class="py-3 px-4 font-bold text-white">{{ log.name }}</td>
+                                <td class="py-3 px-4">
+                                    <span class="text-[11px] text-slate-300">
+                                        {{ log.gender === 'أنثى' ? '🚺 صباحي' : '🚹 مسائي' }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-slate-400">{{ log.plan }}</td>
+                                <td class="py-3 px-4">
+                                    <span
+                                        :class="[
+                                            'px-2 py-0.5 rounded-md text-[10px] font-bold border',
+                                            log.status === 'valid'
+                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                        ]"
+                                    >
+                                        {{ log.status === 'valid' ? '✓ دخول مصرح' : '✕ غير مصرح' }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-slate-400">{{ log.note || '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

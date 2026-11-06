@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
     title: {
         type: String,
         required: true,
@@ -22,9 +24,24 @@ defineProps({
     },
     trend: {
         type: String,
-        default: 'neutral', // 'positive', 'negative', 'warning', 'neutral'
+        default: 'neutral',
+        validator: (val) => ['positive', 'negative', 'warning', 'neutral'].includes(val),
     },
 });
+
+const formattedValue = computed(() => {
+    if (typeof props.value === 'number') {
+        return props.value.toLocaleString();
+    }
+    return props.value;
+});
+
+const badgeStyles = {
+    positive: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    negative: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    warning: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    neutral: 'bg-slate-800 text-slate-400 border-slate-700/60',
+};
 </script>
 
 <template>
@@ -40,24 +57,19 @@ defineProps({
         <!-- القيمة الرقمية ومؤشر الحركة -->
         <div class="flex items-baseline justify-between gap-2">
             <span class="text-2xl sm:text-3xl font-black text-white tracking-tight font-mono">
-                {{ value }}
+                {{ formattedValue }}
             </span>
 
             <span
                 v-if="badge"
-                :class="[
-                    'text-[10px] px-2 py-0.5 rounded-md font-bold font-mono',
-                    trend === 'positive' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : '',
-                    trend === 'negative' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : '',
-                    trend === 'warning' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : '',
-                    trend === 'neutral' ? 'bg-slate-800 text-slate-400' : ''
-                ]"
+                class="text-[10px] px-2 py-0.5 rounded-md font-bold font-mono border"
+                :class="badgeStyles[trend]"
             >
                 {{ badge }}
             </span>
         </div>
 
-        <!-- نص وصفي سفلي إن وجد -->
+        <!-- نص وصفي سفلي -->
         <p v-if="subtitle" class="text-[11px] text-slate-500 truncate pt-1 border-t border-slate-800/60">
             {{ subtitle }}
         </p>
