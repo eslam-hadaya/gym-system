@@ -43,7 +43,7 @@ Route::middleware("guest")->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| مسارات توثيق البريد وتأكيد الـ OTP والجلسة
+| مسارات الجلسة والمصادقة العامة
 |--------------------------------------------------------------------------
 */
 Route::middleware("auth")->group(function () {
@@ -72,11 +72,17 @@ Route::prefix("admin/dashboard")
         Route::get("/", [AdminDashboardController::class, "index"])->name(
             "dashboard",
         );
+
+        // إدارة أعضاء واشتراكات
+        Route::get("/members", [AdminMemberController::class, "index"])->name(
+            "members",
+        );
         Route::post("/members/{member}/cancel-subscription", [
-            \App\Http\Controllers\Admin\AdminMemberController::class,
+            AdminMemberController::class,
             "cancelSubscription",
         ])->name("members.cancel-subscription");
-        // العمليات السريعة على الاشتراكات من الداشبورد
+
+        // العمليات السريعة على الاشتراكات
         Route::post("/subscription/{subscription}/approve", [
             AdminDashboardController::class,
             "approveSubscription",
@@ -89,13 +95,8 @@ Route::prefix("admin/dashboard")
             AdminDashboardController::class,
             "cancelSubscription",
         ])->name("subscription.cancel");
-        // العمليات السريعة على الاشتراكات من الداشبورد
-        Route::post("/subscription/{subscription}/approve", [
-            AdminDashboardController::class,
-            "approveSubscription",
-        ])->name("subscription.approve");
 
-        // مكتب الاستقبال، قارئ الـ QR، واعتماد طلبات الدخول اليدوية
+        // مكتب الاستقبال وقارئ الـ QR
         Route::get("/checkin", [AdminCheckInController::class, "index"])->name(
             "checkin",
         );
@@ -111,11 +112,6 @@ Route::prefix("admin/dashboard")
             AdminCheckInController::class,
             "rejectRequest",
         ])->name("checkin.reject");
-
-        // إدارة اللاعبين
-        Route::get("/members", [AdminMemberController::class, "index"])->name(
-            "members",
-        );
 
         // الباقات والأسعار
         Route::get("/plans", [AdminPlanController::class, "index"])->name(
@@ -152,18 +148,28 @@ Route::prefix("member/dashboard")
     ->middleware(["auth", "role:member"])
     ->name("member.")
     ->group(function () {
-        // بطاقة العضوية والـ QR
         Route::get("/", [MemberDashboardController::class, "index"])->name(
             "dashboard",
         );
 
-        // طلب تسجيل دخول يدوي للتمرين
+        // قراءة الإشعارات
+        Route::post("/notifications/{id}/read", function ($id) {
+            auth()->user()->unreadNotifications->where("id", $id)->markAsRead();
+            return back();
+        })->name("notifications.read");
+
+        Route::post("/notifications/read-all", function () {
+            auth()->user()->unreadNotifications->markAsRead();
+            return back();
+        })->name("notifications.readAll");
+
+        // طلب تسجيل دخول للتمرين
         Route::post("/checkin-request", [
             MemberDashboardController::class,
             "requestCheckIn",
         ])->name("checkin.request");
 
-        // شاشة الاشتراك والتجديد (شام كاش / كاش)
+        // شاشة الاشتراك والتجديد
         Route::get("/subscriptions", [
             MemberDashboardController::class,
             "subscriptions",
@@ -172,8 +178,6 @@ Route::prefix("member/dashboard")
             MemberDashboardController::class,
             "storeSubscription",
         ])->name("subscriptions.store");
-
-        // إلغاء الاشتراك الحالي
         Route::post("/subscriptions/cancel", [
             MemberDashboardController::class,
             "cancelSubscription",

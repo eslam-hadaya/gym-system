@@ -7,30 +7,38 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    protected $rootView = 'app';
+    /**
+     * الـ Root View الرئيسي للواجهة
+     *
+     * @var string
+     */
+    protected $rootView = "app";
 
+    /**
+     * تحديد إصدار الأصول للكاش
+     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
+    /**
+     * البيانات المشتركة مع جميع واجهات Inertia
+     *
+     * @return array<string, mixed>
+     */
     public function share(Request $request): array
     {
         $user = $request->user();
 
         return [
             ...parent::share($request),
-            'auth' => [
-                'user' => $user ? [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                ] : null,
+            "auth" => [
+                "user" => $user,
             ],
-            'member' => ($user && $user->role === 'member') ? $user->member : null,
-            'flash' => [
-                'status' => fn () => $request->session()->get('status'),
+            "flash" => [
+                "status" => fn() => $request->session()->get("status"),
+                "error" => fn() => $request->session()->get("error"),
             ],
         ];
     }

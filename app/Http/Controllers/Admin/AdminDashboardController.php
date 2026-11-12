@@ -72,6 +72,28 @@ class AdminDashboardController extends Controller
             ],
         ];
 
+        // المشتركون الذين تنتهي باقاتهم خلال آخر 5 أيام للتنبيه والمتابعة
+        $expiringSoonSubscriptions = Subscription::with(["member.user", "plan"])
+            ->where("payment_status", "verified")
+            ->whereBetween("end_date", [now(), now()->addDays(5)->endOfDay()])
+            ->orderBy("end_date", "asc")
+            ->get()
+            ->map(
+                fn($sub) => [
+                    "id" => $sub->id,
+                    "member_name" => $sub->member->user->name ?? "غير محدد",
+                    "member_code" => $sub->member->member_code,
+                    "plan_name" => $sub->plan->name ?? "باقة رياضية",
+                    "end_date" => $sub->end_date?->format("Y-m-d") ?? "—",
+                    "remaining_days" => max(
+                        0,
+                        (int) now()
+                            ->startOfDay()
+                            ->diffInDays($sub->end_date?->startOfDay(), false),
+                    ),
+                ],
+            );
+
         $recentCheckIns = CheckIn::with([
             "member.user",
             "member.activeSubscription.plan",
@@ -122,6 +144,7 @@ class AdminDashboardController extends Controller
             "stats" => $stats,
             "recentCheckIns" => $recentCheckIns,
             "pendingSubscriptions" => $pendingSubscriptions,
+            "expiringSoonSubscriptions" => $expiringSoonSubscriptions,
         ]);
     }
 
@@ -157,18 +180,15 @@ class AdminDashboardController extends Controller
      * إلغاء اشتراك لاعب من قبل الأدمن
      */
     public function cancelSubscription(
-        \App\Models\Subscription $subscription,
-    ): \Illuminate\Http\RedirectResponse {
-        \Illuminate\Support\Facades\DB::transaction(function () use (
-            $subscription,
-        ) {
+        Subscription $subscription,
+    ): RedirectResponse {
+        DB::transaction(function () use ($subscription) {
             $subscription->update([
                 "payment_status" => "rejected",
                 "end_date" => now(),
             ]);
 
-            // التحقق إن كان للاعب اشتراكات نشطة أخرى، وإلا نحول حالته إلى pending
-            $hasOtherActive = \App\Models\Subscription::where(
+            $hasOtherActive = Subscription::where(
                 "member_id",
                 $subscription->member_id,
             )
@@ -179,7 +199,7 @@ class AdminDashboardController extends Controller
 
             if (!$hasOtherActive) {
                 $subscription->member->update([
-                    "status" => "pending", // متوافق مع قيد قاعدة البيانات
+                    "status" => "pending",
                 ]);
             }
         });

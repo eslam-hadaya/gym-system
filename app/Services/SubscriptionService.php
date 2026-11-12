@@ -70,7 +70,7 @@ class SubscriptionService
             // جلب آخر اشتراك نشط وسارٍ للاعب إن وجد
             $currentActiveSub = Subscription::where("member_id", $member->id)
                 ->where("payment_status", "verified")
-                ->where("end_date", ">", Carbon::now())
+                ->whereDate("end_date", ">=", Carbon::today())
                 ->orderByDesc("end_date")
                 ->first();
 

@@ -3,11 +3,12 @@ import { ref, onMounted, watch } from "vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import MemberLayout from "@/Layouts/MemberLayout.vue";
 import QRCode from "qrcode";
+import { useRemainingDays } from "@/Composables/useRemainingDays";
 
 const props = defineProps({
     member: {
         type: Object,
-        required: true,
+        default: () => ({}),
     },
     subscription: {
         type: Object,
@@ -27,21 +28,29 @@ const props = defineProps({
     },
 });
 
+const remainingDays = useRemainingDays(
+    () => props.subscription?.end_date,
+);
+
 const qrCanvas = ref(null);
 
 const generateQR = async () => {
     if (!props.member?.member_code || !qrCanvas.value) return;
 
     try {
-        await QRCode.toCanvas(qrCanvas.value, props.member.member_code, {
-            width: 220,
-            margin: 2,
-            color: {
-                dark: "#0f172a",
-                light: "#ffffff",
+        await QRCode.toCanvas(
+            qrCanvas.value,
+            String(props.member.member_code),
+            {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: "#0f172a",
+                    light: "#ffffff",
+                },
+                errorCorrectionLevel: "H",
             },
-            errorCorrectionLevel: "H",
-        });
+        );
     } catch (err) {
         console.error("Failed to generate QR code:", err);
     }
@@ -49,13 +58,17 @@ const generateQR = async () => {
 
 const downloadQR = () => {
     if (!qrCanvas.value) return;
-    const imageUri = qrCanvas.value.toDataURL("image/png");
-    const downloadLink = document.createElement("a");
-    downloadLink.href = imageUri;
-    downloadLink.download = `QR_${props.member.member_code}.png`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    try {
+        const imageUri = qrCanvas.value.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.href = imageUri;
+        downloadLink.download = `QR_${props.member?.member_code || "code"}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    } catch (e) {
+        console.error(e);
+    }
 };
 
 onMounted(() => {
@@ -91,12 +104,11 @@ const requestManualCheckIn = () => {
                 );
             },
             onError: (errors) => {
-                console.error("Check-in Error:", errors);
-                alert(
+                const msg =
                     errors.checkin ||
-                        Object.values(errors)[0] ||
-                        "تعذر إرسال طلب الدخول.",
-                );
+                    Object.values(errors)[0] ||
+                    "تعذر إرسال طلب الدخول.";
+                alert(msg);
             },
             onFinish: () => {
                 isRequestingCheckIn.value = false;
@@ -111,17 +123,62 @@ const requestManualCheckIn = () => {
 
     <MemberLayout>
         <div class="space-y-6">
+            <!-- شريط تنبيه اقتراب انتهاء الاشتراك (آخر 5 أيام) -->
+            <div
+                v-if="subscription && remainingDays <= 5"
+                class="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+            >
+                <div class="flex items-center gap-3.5">
+                    <div
+                        class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center text-xl shrink-0"
+                    >
+                        ⚠️
+                    </div>
+                    <div>
+                        <h3
+                            class="text-sm font-black text-amber-950 dark:text-amber-200"
+                        >
+                            تنبيه: اقتراب موعد انتهاء الاشتراك
+                        </h3>
+                        <p
+                            class="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5"
+                        >
+                            يتبقى في باقتك الحالية
+                            <span
+                                class="font-bold font-mono text-amber-600 dark:text-amber-400"
+                            >
+                                {{ remainingDays }}
+                                {{
+                                    remainingDays === 1
+                                        ? "يوم"
+                                        : "أيام"
+                                }}
+                            </span>
+                            فقط (ينتهي في {{ subscription.end_date }}). يرجى
+                            التجديد لتفادي انقطاع صلاحية الدخول.
+                        </p>
+                    </div>
+                </div>
+
+                <Link
+                    href="/member/dashboard/subscriptions"
+                    class="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-black text-xs rounded-xl text-center transition-all shadow-sm shrink-0 cursor-pointer"
+                >
+                    تجديد الاشتراك الآن ←
+                </Link>
+            </div>
+
             <!-- ترويسة الترحيب وحالة الحساب -->
             <div
                 class="bg-gradient-to-r from-emerald-500/15 via-slate-900 to-slate-900 p-6 rounded-3xl border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
             >
                 <div>
                     <h2 class="text-lg font-black text-white">
-                        أهلاً بك يا كابتن، {{ member.name }} 👋
+                        أهلاً بك يا كابتن، {{ member?.name || "اللاعب" }} 👋
                     </h2>
                     <p class="text-xs text-slate-400 mt-1">
                         {{
-                            member.gender === "female"
+                            member?.gender === "female"
                                 ? "فترة التدريب: صباحية (سيدات)"
                                 : "فترة التدريب: مسائية (رجال)"
                         }}
@@ -165,7 +222,7 @@ const requestManualCheckIn = () => {
                                 <span
                                     class="text-base font-mono font-black text-emerald-400 tracking-wider"
                                 >
-                                    {{ member.member_code }}
+                                    {{ member?.member_code || "—" }}
                                 </span>
                             </div>
                             <span
@@ -199,16 +256,15 @@ const requestManualCheckIn = () => {
                             <span
                                 class="text-xs text-slate-400 mt-2 font-mono font-bold tracking-widest"
                             >
-                                {{ member.member_code }}
+                                {{ member?.member_code }}
                             </span>
                         </div>
 
-                        <!-- قسم زر الدخول والتنبيه الذكي لمنع التكرار -->
+                        <!-- قسم زر الدخول والتنبيه الذكي -->
                         <div
                             class="mt-4 pt-4 border-t border-slate-800 space-y-3"
                         >
                             <div v-if="subscription">
-                                <!-- 1. مسجل دوامه اليوم -->
                                 <div
                                     v-if="hasCheckedInToday"
                                     class="w-full py-2.5 px-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2"
@@ -220,7 +276,6 @@ const requestManualCheckIn = () => {
                                     >
                                 </div>
 
-                                <!-- 2. طلبه معلق بالاستقبال -->
                                 <div
                                     v-else-if="hasPendingCheckIn"
                                     class="w-full py-2 px-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2"
@@ -234,7 +289,6 @@ const requestManualCheckIn = () => {
                                     >
                                 </div>
 
-                                <!-- 3. متاح للطلب -->
                                 <button
                                     v-else
                                     type="button"
@@ -332,7 +386,7 @@ const requestManualCheckIn = () => {
                                 <span
                                     class="text-xl font-black text-emerald-400 font-mono"
                                 >
-                                    {{ subscription.remaining_days }} يوم
+                                    {{ remainingDays }} يوم
                                 </span>
                             </div>
                         </div>

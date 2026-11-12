@@ -2,12 +2,18 @@
 import { ref, computed } from "vue";
 import { Head, useForm, router } from "@inertiajs/vue3";
 import MemberLayout from "@/Layouts/MemberLayout.vue";
+import { useRemainingDays } from "@/Composables/useRemainingDays";
 
 const props = defineProps({
     plans: Array,
     currentSubscription: Object,
+    renewal: Object,
     memberStatus: String,
 });
+
+const remainingDays = useRemainingDays(
+    () => props.renewal?.end_date,
+);
 
 const form = useForm({
     plan_id: props.plans && props.plans.length > 0 ? props.plans[0].id : null,
@@ -22,9 +28,9 @@ const isCancelling = ref(false);
 
 // هل يسمح بالتجديد (آخر 10 أيام فقط إذا كان الاشتراك معتمداً)
 const canRenew = computed(() => {
-    if (!props.currentSubscription) return true;
-    if (props.currentSubscription.status !== "verified") return true;
-    return props.currentSubscription.can_renew ?? true;
+    return (
+        !props.renewal?.has_active_subscription || remainingDays.value <= 10
+    );
 });
 
 const selectedPlan = computed(() => {
@@ -37,7 +43,7 @@ const submitOrder = () => {
     submitSuccess.value = false;
 
     if (!canRenew.value) {
-        submitError.value = `لا يمكنك التجديد حالياً، يتبقى لديك ${props.currentSubscription.remaining_days} يوماً. التجديد متاح في آخر 10 أيام فقط.`;
+        submitError.value = `لا يمكنك التجديد حالياً، يتبقى لديك ${remainingDays.value} يوماً. التجديد متاح في آخر 10 أيام فقط.`;
         return;
     }
 
@@ -113,7 +119,7 @@ const formatPrice = (val) => {
 
             <!-- تنبيه منع التجديد المبكر -->
             <div
-                v-if="!canRenew && currentSubscription"
+                v-if="!canRenew && renewal?.has_active_subscription"
                 class="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-5 flex items-start gap-4 text-amber-900"
             >
                 <div
@@ -128,13 +134,31 @@ const formatPrice = (val) => {
                     <p class="text-xs text-amber-800 mt-1 leading-relaxed">
                         يتبقى في اشتراكك الفعال
                         <span class="font-bold underline"
-                            >{{
-                                currentSubscription.remaining_days
-                            }}
+                            >{{ remainingDays }}
                             يوماً</span
                         >. وفقاً لنظام الصالة، يمكنك تقديم طلب تجديد الباقة فقط
                         عندما يتبقى في رصيدك
                         <span class="font-bold">10 أيام أو أقل</span>.
+                    </p>
+                </div>
+            </div>
+
+            <div
+                v-else-if="renewal?.has_active_subscription"
+                class="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-5 flex items-start gap-4 text-emerald-900"
+            >
+                <div
+                    class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0 text-xl font-black"
+                >
+                    ✓
+                </div>
+                <div>
+                    <h3 class="font-black text-base text-emerald-950">
+                        أصبح التجديد متاحاً
+                    </h3>
+                    <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                        تبقى {{ remainingDays }} أيام أو أقل من اشتراكك، ويمكنك
+                        الآن تقديم طلب التجديد.
                     </p>
                 </div>
             </div>
@@ -165,7 +189,7 @@ const formatPrice = (val) => {
                                     class="w-1.5 h-1.5 rounded-full bg-emerald-500"
                                 ></span>
                                 مفعّل وسارٍ (متبقي
-                                {{ currentSubscription.remaining_days }} يوم)
+                                {{ remainingDays }} يوم)
                             </span>
 
                             <!-- قيد التدقيق -->

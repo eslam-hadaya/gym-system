@@ -23,7 +23,7 @@ class MemberDashboardController extends Controller
     ) {}
 
     /**
-     * شاشة الداشبورد وبطاقة الـ QR وحالة الحساب
+     * شاشة الداشبورد وبطاقة الـ QR وحالة الحساب مع فحص تنبيه الـ 5 أيام
      */
     public function index(): Response
     {
@@ -35,10 +35,12 @@ class MemberDashboardController extends Controller
         }
 
         // جلب آخر اشتراك نشط ومعتمد
-        $activeSub = Subscription::with("plan")
+        $activeSub = Subscription::query()
+            ->select("subscriptions.*", "plans.name as plan_name")
+            ->join("plans", "plans.id", "=", "subscriptions.plan_id")
             ->where("member_id", $member->id)
             ->where("payment_status", "verified")
-            ->where("end_date", ">", now())
+            ->whereDate("end_date", ">=", today())
             ->latest("end_date")
             ->first();
 
@@ -55,17 +57,17 @@ class MemberDashboardController extends Controller
                 ],
             );
 
-        // هل دخل اللاعب وتمرّن بالفعل اليوم؟
-        $hasCheckedInToday = CheckIn::where("member_id", $member->id)
-            ->where("status", "valid")
+        $todayCheckIns = CheckIn::where("member_id", $member->id)
             ->whereDate("created_at", Carbon::today())
-            ->exists();
-
-        // هل لديه طلب معلق ينتظر موافقة الاستقبال اليوم؟
-        $hasPendingRequest = CheckIn::where("member_id", $member->id)
-            ->where("status", "pending")
-            ->whereDate("created_at", Carbon::today())
-            ->exists();
+            ->selectRaw(
+                "COALESCE(MAX(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS has_checked_in_today",
+                ["valid"],
+            )
+            ->selectRaw(
+                "COALESCE(MAX(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS has_pending_request",
+                ["pending"],
+            )
+            ->first();
 
         return Inertia::render("Member/Dashboard/Index", [
             "member" => [
@@ -77,18 +79,16 @@ class MemberDashboardController extends Controller
             ],
             "subscription" => $activeSub
                 ? [
-                    "plan_name" => $activeSub->plan->name,
+                    "plan_name" => $activeSub->plan_name ?? "باقة رياضية",
                     "start_date" => $activeSub->start_date?->format("Y-m-d"),
                     "end_date" => $activeSub->end_date?->format("Y-m-d"),
-                    "remaining_days" => max(
-                        0,
-                        (int) now()->diffInDays($activeSub->end_date, false),
-                    ),
+                    "remaining_days" => $activeSub->days_remaining,
+                    "is_expiring_soon" => $activeSub->is_expiring_soon,
                 ]
                 : null,
             "recentCheckIns" => $recentCheckIns,
-            "hasCheckedInToday" => $hasCheckedInToday,
-            "hasPendingCheckIn" => $hasPendingRequest,
+            "hasCheckedInToday" => (bool) $todayCheckIns->has_checked_in_today,
+            "hasPendingCheckIn" => (bool) $todayCheckIns->has_pending_request,
         ]);
     }
 
@@ -115,25 +115,19 @@ class MemberDashboardController extends Controller
 
         $activeSubscription = Subscription::where("member_id", $member->id)
             ->where("payment_status", "verified")
-            ->where("end_date", ">", now())
+            ->whereDate("end_date", ">=", today())
             ->latest("end_date")
             ->first();
 
-        $remainingDays = 0;
-        $canRenew = true;
-
-        if ($activeSubscription && $activeSubscription->end_date) {
-            $remainingDays = max(
-                0,
-                (int) now()->diffInDays($activeSubscription->end_date, false),
-            );
-            if ($remainingDays > 10) {
-                $canRenew = false;
-            }
-        }
-
         return Inertia::render("Member/Dashboard/Subscriptions", [
             "plans" => $plans,
+            "renewal" => [
+                "has_active_subscription" => (bool) $activeSubscription,
+                "end_date" => $activeSubscription?->end_date?->format(
+                    "Y-m-d",
+                ),
+                "remaining_days" => $activeSubscription?->days_remaining ?? 0,
+            ],
             "currentSubscription" => $latestSubscription
                 ? [
                     "id" => $latestSubscription->id,
@@ -148,8 +142,8 @@ class MemberDashboardController extends Controller
                     "end_date" =>
                         $latestSubscription->end_date?->format("Y-m-d") ?? "—",
                     "price_paid" => (int) $latestSubscription->price_paid,
-                    "remaining_days" => $remainingDays,
-                    "can_renew" => $canRenew,
+                    "remaining_days" => $latestSubscription->days_remaining,
+                    "is_expiring_soon" => $latestSubscription->is_expiring_soon,
                 ]
                 : null,
             "memberStatus" => $member->status,
@@ -170,16 +164,13 @@ class MemberDashboardController extends Controller
 
         $activeSub = Subscription::where("member_id", $member->id)
             ->where("payment_status", "verified")
-            ->where("end_date", ">", now())
+            ->whereDate("end_date", ">=", today())
             ->latest("end_date")
             ->first();
 
-        if ($activeSub && $activeSub->end_date) {
-            $remainingDays = max(
-                0,
-                (int) now()->diffInDays($activeSub->end_date, false),
-            );
-            if ($remainingDays > 10) {
+        if ($activeSub) {
+            $remainingDays = $activeSub->days_remaining;
+            if (!$activeSub->can_renew) {
                 return back()->withErrors([
                     "plan_id" => "لا يمكنك تجديد الاشتراك حالياً؛ يتبقى في اشتراكك {$remainingDays} يوماً. التجديد متاح فقط في آخر 10 أيام.",
                 ]);
@@ -246,7 +237,7 @@ class MemberDashboardController extends Controller
 
         $activeSub = Subscription::where("member_id", $member->id)
             ->where("payment_status", "verified")
-            ->where("end_date", ">", now())
+            ->whereDate("end_date", ">=", today())
             ->first();
 
         if (!$activeSub) {
