@@ -14,20 +14,20 @@ class AdminPlanController extends Controller
     public function index(): Response
     {
         $plans = Plan::withCount([
-            'subscriptions as active_members' => function ($query) {$query->where('payment_status', 'verified')
-                    ->whereDate('end_date', '>=', now());
-            }
+            'subscriptions as active_members' => function ($query) {
+                $query->currentForAccess();
+            },
         ])
-        ->orderBy('days')
-        ->get()
-        ->map(fn ($plan) => [
-            'id' => $plan->id,
-            'name' => $plan->name,
-            'days' => $plan->days,
-            'price' => (int) $plan->price,
-            'is_active' => (bool) $plan->is_active,
-            'active_members' => (int) $plan->active_members,
-        ]);
+            ->orderBy('days')
+            ->get()
+            ->map(fn ($plan) => [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'days' => $plan->days,
+                'price' => (int) $plan->price,
+                'is_active' => (bool) $plan->is_active,
+                'active_members' => (int) $plan->active_members,
+            ]);
 
         return Inertia::render('Admin/Dashboard/Plans', [
             'plans' => $plans,
@@ -36,7 +36,7 @@ class AdminPlanController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated =$request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'days' => ['required', 'integer', 'min:1', 'max:3650'],
             'price' => ['required', 'numeric', 'min:0'],
@@ -48,9 +48,9 @@ class AdminPlanController extends Controller
         return back()->with('status', 'plan-created');
     }
 
-    public function update(Request $request, Plan$plan): RedirectResponse
+    public function update(Request $request, Plan $plan): RedirectResponse
     {
-        $validated =$request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'days' => ['required', 'integer', 'min:1', 'max:3650'],
             'price' => ['required', 'numeric', 'min:0'],

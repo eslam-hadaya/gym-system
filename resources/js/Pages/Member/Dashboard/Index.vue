@@ -3,7 +3,10 @@ import { ref, onMounted, watch } from "vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import MemberLayout from "@/Layouts/MemberLayout.vue";
 import QRCode from "qrcode";
-import { useRemainingDays } from "@/Composables/useRemainingDays";
+import {
+    useCountdown,
+    useRemainingDays,
+} from "@/Composables/useRemainingDays";
 
 const props = defineProps({
     member: {
@@ -30,6 +33,9 @@ const props = defineProps({
 
 const remainingDays = useRemainingDays(
     () => props.subscription?.end_date,
+);
+const graceCountdown = useCountdown(
+    () => props.subscription?.grace_expires_at,
 );
 
 const qrCanvas = ref(null);
@@ -125,7 +131,48 @@ const requestManualCheckIn = () => {
         <div class="space-y-6">
             <!-- شريط تنبيه اقتراب انتهاء الاشتراك (آخر 5 أيام) -->
             <div
-                v-if="subscription && remainingDays <= 5"
+                v-if="subscription?.is_in_grace_period"
+                class="bg-rose-500/10 border-2 border-rose-500/30 rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+            >
+                <div class="flex items-center gap-3.5">
+                    <div
+                        class="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl shrink-0"
+                    >
+                        ⏳
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-rose-200">
+                            انتهى الاشتراك وأنت الآن ضمن مهلة السماح
+                        </h3>
+                        <p class="text-xs text-rose-300/80 mt-0.5">
+                            ينتهي السماح عند وصول العداد للصفر، وبعدها يتوقف
+                            الدخول. جدّد اشتراكك الآن.
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    v-if="graceCountdown.isActive && !graceCountdown.isComplete"
+                    class="flex items-center gap-2 font-mono font-black text-rose-200"
+                    aria-live="polite"
+                    aria-label="الوقت المتبقي من مهلة السماح"
+                >
+                    <span v-if="graceCountdown.days > 0">
+                        {{ graceCountdown.days }} يوم
+                    </span>
+                    <span>{{ String(graceCountdown.hours).padStart(2, "0") }}</span>
+                    <span>:</span>
+                    <span>{{ String(graceCountdown.minutes).padStart(2, "0") }}</span>
+                    <span>:</span>
+                    <span>{{ String(graceCountdown.seconds).padStart(2, "0") }}</span>
+                </div>
+                <span v-else class="text-xs font-bold text-rose-300">
+                    انتهت مهلة السماح؛ حدّث الصفحة لتحديث حالة الاشتراك.
+                </span>
+            </div>
+
+            <div
+                v-else-if="subscription && remainingDays <= 5"
                 class="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
             >
                 <div class="flex items-center gap-3.5">
@@ -188,12 +235,26 @@ const requestManualCheckIn = () => {
                     <span class="text-xs text-slate-400">حالة الحساب:</span>
                     <span
                         v-if="subscription"
-                        class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1.5"
+                        class="text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5"
+                        :class="
+                            subscription.is_in_grace_period
+                                ? 'text-rose-300 bg-rose-500/10 border-rose-500/20'
+                                : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                        "
                     >
                         <span
-                            class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+                            class="w-2 h-2 rounded-full animate-pulse"
+                            :class="
+                                subscription.is_in_grace_period
+                                    ? 'bg-rose-400'
+                                    : 'bg-emerald-500'
+                            "
                         ></span>
-                        نشط ومصرح بالدخول
+                        {{
+                            subscription.is_in_grace_period
+                                ? "ضمن مهلة السماح"
+                                : "نشط ومصرح بالدخول"
+                        }}
                     </span>
                     <span
                         v-else
@@ -387,6 +448,39 @@ const requestManualCheckIn = () => {
                                     class="text-xl font-black text-emerald-400 font-mono"
                                 >
                                     {{ remainingDays }} يوم
+                                </span>
+                            </div>
+                            <div
+                                v-if="subscription.is_in_grace_period"
+                                class="col-span-2 flex flex-col gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 sm:flex-row sm:items-center sm:justify-between"
+                                role="status"
+                                aria-live="polite"
+                            >
+                                <span class="text-xs font-bold text-rose-200">
+                                    الوقت المتبقي قبل إيقاف الدخول
+                                </span>
+                                <span
+                                    v-if="
+                                        graceCountdown.isActive &&
+                                        !graceCountdown.isComplete
+                                    "
+                                    class="font-mono text-lg font-black text-rose-300"
+                                >
+                                    <span v-if="graceCountdown.days > 0">
+                                        {{ graceCountdown.days }} يوم
+                                    </span>
+                                    {{ String(graceCountdown.hours).padStart(2, "0") }}:{{
+                                        String(graceCountdown.minutes).padStart(
+                                            2,
+                                            "0",
+                                        )
+                                    }}:{{ String(graceCountdown.seconds).padStart(2, "0") }}
+                                </span>
+                                <span
+                                    v-else
+                                    class="text-xs font-bold text-rose-300"
+                                >
+                                    انتهت مهلة السماح؛ حدّث الصفحة لتحديث حالة الاشتراك.
                                 </span>
                             </div>
                         </div>

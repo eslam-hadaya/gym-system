@@ -2,7 +2,10 @@
 import { ref, computed } from "vue";
 import { Head, useForm, router } from "@inertiajs/vue3";
 import MemberLayout from "@/Layouts/MemberLayout.vue";
-import { useRemainingDays } from "@/Composables/useRemainingDays";
+import {
+    useCountdown,
+    useRemainingDays,
+} from "@/Composables/useRemainingDays";
 
 const props = defineProps({
     plans: Array,
@@ -13,6 +16,9 @@ const props = defineProps({
 
 const remainingDays = useRemainingDays(
     () => props.renewal?.end_date,
+);
+const graceCountdown = useCountdown(
+    () => props.renewal?.grace_expires_at,
 );
 
 const form = useForm({
@@ -117,6 +123,38 @@ const formatPrice = (val) => {
                 </p>
             </div>
 
+            <div
+                v-if="renewal?.is_in_grace_period"
+                class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+            >
+                <div>
+                    <h2 class="font-black text-rose-900">
+                        انتهى اشتراكك وأنت ضمن مهلة السماح
+                    </h2>
+                    <p class="text-xs text-rose-700 mt-1">
+                        جدّد الآن؛ يتوقف الدخول عند انتهاء العداد.
+                    </p>
+                </div>
+                <div
+                    v-if="graceCountdown.isActive && !graceCountdown.isComplete"
+                    class="flex items-center gap-2 font-mono font-black text-xl text-rose-700"
+                    aria-live="polite"
+                    aria-label="الوقت المتبقي من مهلة السماح"
+                >
+                    <span v-if="graceCountdown.days > 0">
+                        {{ graceCountdown.days }} يوم
+                    </span>
+                    <span>{{ String(graceCountdown.hours).padStart(2, "0") }}</span>
+                    <span>:</span>
+                    <span>{{ String(graceCountdown.minutes).padStart(2, "0") }}</span>
+                    <span>:</span>
+                    <span>{{ String(graceCountdown.seconds).padStart(2, "0") }}</span>
+                </div>
+                <span v-else class="text-sm font-bold text-rose-700">
+                    انتهت مهلة السماح؛ حدّث الصفحة لتحديث حالة الاشتراك.
+                </span>
+            </div>
+
             <!-- تنبيه منع التجديد المبكر -->
             <div
                 v-if="!canRenew && renewal?.has_active_subscription"
@@ -183,13 +221,21 @@ const formatPrice = (val) => {
                             <!-- معتمد وسارٍ -->
                             <span
                                 v-if="currentSubscription.status === 'verified'"
-                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black border"
+                                :class="
+                                    currentSubscription.is_in_grace_period
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                "
                             >
                                 <span
                                     class="w-1.5 h-1.5 rounded-full bg-emerald-500"
                                 ></span>
-                                مفعّل وسارٍ (متبقي
-                                {{ remainingDays }} يوم)
+                                {{
+                                    currentSubscription.is_in_grace_period
+                                        ? "ضمن مهلة السماح"
+                                        : `مفعّل وسارٍ (متبقي ${remainingDays} يوم)`
+                                }}
                             </span>
 
                             <!-- قيد التدقيق -->

@@ -42,3 +42,35 @@ export function useRemainingDays(getEndDate) {
         return Math.max(0, (endDate - currentDate) / 86_400_000);
     });
 }
+
+export function useCountdown(getDeadline) {
+    const currentTime = ref(Date.now());
+    let intervalId;
+
+    onMounted(() => {
+        intervalId = window.setInterval(() => {
+            currentTime.value = Date.now();
+        }, 1000);
+    });
+
+    onUnmounted(() => {
+        window.clearInterval(intervalId);
+    });
+
+    return computed(() => {
+        const deadline = getDeadline();
+        const deadlineTime = deadline ? Date.parse(deadline) : Number.NaN;
+        const totalSeconds = Number.isFinite(deadlineTime)
+            ? Math.max(0, Math.ceil((deadlineTime - currentTime.value) / 1000))
+            : 0;
+
+        return {
+            isActive: Number.isFinite(deadlineTime),
+            isComplete: Number.isFinite(deadlineTime) && totalSeconds === 0,
+            days: Math.floor(totalSeconds / 86_400),
+            hours: Math.floor((totalSeconds % 86_400) / 3_600),
+            minutes: Math.floor((totalSeconds % 3_600) / 60),
+            seconds: totalSeconds % 60,
+        };
+    });
+}

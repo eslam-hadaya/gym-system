@@ -113,7 +113,7 @@ const reject = (id) => {
                 </div>
             </div>
 
-            <!-- جدول تنبيهات انتهاء الاشتراكات (آخر 5 أيام) -->
+            <!-- تنبيهات الاشتراكات القريبة والمنتهية ضمن مهلة السماح -->
             <div
                 v-if="expiringSoonSubscriptions.length > 0"
                 class="bg-slate-900/60 border border-amber-500/30 rounded-2xl p-6 space-y-4"
@@ -126,7 +126,7 @@ const reject = (id) => {
                             class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"
                         ></span>
                         <h2 class="text-sm font-bold text-white">
-                            تنبيهات انتهاء الاشتراكات (خلال 5 أيام)
+                            تنبيهات الاشتراكات (قرب الانتهاء / مهلة السماح)
                         </h2>
                     </div>
                     <span
@@ -159,8 +159,22 @@ const reject = (id) => {
                                 :key="sub.id"
                                 class="hover:bg-slate-800/30 transition"
                             >
-                                <td class="py-3.5 px-2 font-bold text-white">
-                                    {{ sub.member_name }}
+                                <td class="py-3.5 px-2">
+                                    <div class="flex flex-wrap items-center gap-2 font-bold text-white">
+                                        <span>{{ sub.member_name }}</span>
+                                        <span
+                                            v-if="sub.alert_status === 'grace'"
+                                            class="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-300 border border-orange-500/20 text-[10px]"
+                                        >
+                                            ⏳ مهلة السماح
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px]"
+                                        >
+                                            ⚠️ قرب الانتهاء
+                                        </span>
+                                    </div>
                                 </td>
                                 <td
                                     class="py-3.5 px-2 font-mono text-emerald-400"
@@ -179,13 +193,17 @@ const reject = (id) => {
                                     <span
                                         class="px-2.5 py-1 rounded-md text-[10px] font-bold inline-block"
                                         :class="
-                                            sub.remaining_days === 0
+                                            sub.alert_status === 'grace'
+                                                ? 'bg-orange-500/10 text-orange-300 border border-orange-500/20'
+                                                : sub.remaining_days === 0
                                                 ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                                         "
                                     >
                                         {{
-                                            sub.remaining_days === 0
+                                            sub.alert_status === 'grace'
+                                                ? "ضمن مهلة السماح"
+                                                : sub.remaining_days === 0
                                                 ? "ينتهي اليوم"
                                                 : sub.remaining_days + " أيام"
                                         }}

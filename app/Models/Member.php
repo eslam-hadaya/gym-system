@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Member extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'member_code',
@@ -31,8 +33,7 @@ class Member extends Model
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)
-            ->where('payment_status', 'verified')
-            ->whereDate('end_date', '>=', now())
+            ->currentForAccess()
             ->latestOfMany();
     }
 

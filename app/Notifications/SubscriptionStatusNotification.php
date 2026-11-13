@@ -11,9 +11,9 @@ class SubscriptionStatusNotification extends Notification
     use Queueable;
 
     /**
-     * @param Subscription $subscription كائن الاشتراك المعني
-     * @param string $type نوع الإشعار: 'expiring_soon' أو 'expired'
-     * @param int $daysRemaining الأيام المتبقية في حال كان الإشعار تحذيرياً
+     * @param  Subscription  $subscription  كائن الاشتراك المعني
+     * @param  string  $type  نوع الإشعار: 'expiring_soon' أو 'expired'
+     * @param  int  $daysRemaining  الأيام المتبقية في حال كان الإشعار تحذيرياً
      */
     public function __construct(
         public Subscription $subscription,
@@ -26,7 +26,7 @@ class SubscriptionStatusNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ["database"];
+        return ['database'];
     }
 
     /**
@@ -34,26 +34,26 @@ class SubscriptionStatusNotification extends Notification
      */
     public function toDatabase(object $notifiable): array
     {
-        $planName = $this->subscription->plan->name ?? "الباقة الرياضية";
+        $planName = $this->subscription->plan->name ?? 'الباقة الرياضية';
 
-        if ($this->type === "expiring_soon") {
+        if ($this->type === 'expiring_soon') {
             return [
-                "title" => "اقتراب موعد انتهاء الاشتراك ⚠️",
-                "message" => "عزيزي الكابتن، يتبقى في باقتك ({$planName}) {$this->daysRemaining} أيام فقط. يرجى التجديد لتفادي انقطاع صلاحية الدخول.",
-                "type" => "warning",
-                "action_url" => "/member/dashboard/subscriptions",
-                "subscription_id" => $this->subscription->id,
-                "created_at" => now()->format("Y-m-d H:i"),
+                'title' => 'اقتراب موعد انتهاء الاشتراك ⚠️',
+                'message' => "عزيزي الكابتن، يتبقى في باقتك ({$planName}) {$this->daysRemaining} أيام فقط. يرجى التجديد لتفادي انقطاع صلاحية الدخول.",
+                'type' => 'warning',
+                'action_url' => '/member/dashboard/subscriptions',
+                'subscription_id' => $this->subscription->id,
+                'created_at' => now()->format('Y-m-d H:i'),
             ];
         }
 
         return [
-            "title" => "انتهت صلاحية اشتراكك 🛑",
-            "message" => "عزيزي الكابتن، انتهت صلاحية باقتك ({$planName}) اليوم. يرجى مراجعة الإدارة وتجديد الاشتراك لاستئناف التمارين ومسح كود الـ QR.",
-            "type" => "danger",
-            "action_url" => "/member/dashboard/subscriptions",
-            "subscription_id" => $this->subscription->id,
-            "created_at" => now()->format("Y-m-d H:i"),
+            'title' => 'انتهت صلاحية اشتراكك 🛑',
+            'message' => "عزيزي الكابتن، انتهت صلاحية باقتك ({$planName}) وفترة السماح. يرجى مراجعة الإدارة وتجديد الاشتراك لاستئناف التمارين ومسح كود الـ QR.",
+            'type' => 'danger',
+            'action_url' => '/member/dashboard/subscriptions',
+            'subscription_id' => $this->subscription->id,
+            'created_at' => now()->format('Y-m-d H:i'),
         ];
     }
 }

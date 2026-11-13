@@ -105,7 +105,29 @@ watch(statusFilter, () => {
                         <tbody class="divide-y divide-slate-800/60 text-slate-300">
                             <tr v-for="member in members.data" :key="member.id" class="hover:bg-slate-800/30 transition">
                                 <td class="py-3.5 px-4 font-mono font-bold text-amber-400">{{ member.code }}</td>
-                                <td class="py-3.5 px-4 font-bold text-white">{{ member.name }}</td>
+                                <td class="py-3.5 px-4">
+                                    <div class="flex flex-wrap items-center gap-2 font-bold text-white">
+                                        <span>{{ member.name }}</span>
+                                        <span
+                                            v-if="member.subscription_alert === 'expiring'"
+                                            class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-bold"
+                                        >
+                                            ⚠️ قرب الانتهاء
+                                        </span>
+                                        <span
+                                            v-else-if="member.subscription_alert === 'grace'"
+                                            class="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-300 border border-orange-500/20 text-[10px] font-bold"
+                                        >
+                                            ⏳ مهلة السماح
+                                        </span>
+                                        <span
+                                            v-else-if="member.subscription_alert === 'expired'"
+                                            class="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-300 border border-rose-500/20 text-[10px] font-bold"
+                                        >
+                                            ⛔ منتهي
+                                        </span>
+                                    </div>
+                                </td>
                                 <td class="py-3.5 px-4 font-mono text-slate-400" dir="ltr">{{ member.phone }}</td>
                                 <td class="py-3.5 px-4">
                                     <span class="inline-flex items-center gap-1 text-[11px]">
