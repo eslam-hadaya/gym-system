@@ -1,17 +1,17 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { Head, Link, router } from "@inertiajs/vue3";
+import { ref, watch } from "vue";
+import AdminLayout from "@/Layouts/AdminLayout.vue";
+import {
+    Search,
+    UserPlus,
+    Filter,
+    User,
+} from "@lucide/vue";
 
 const props = defineProps({
-    members: {
-        type: Object,
-        required: true,
-    },
-    filters: {
-        type: Object,
-        default: () => ({ search: '', status: 'all' }),
-    },
+    members: { type: Object, required: true },
+    filters: { type: Object, default: () => ({ search: "", status: "all" }) },
 });
 
 const searchQuery = ref(props.filters.search);
@@ -20,16 +20,13 @@ let searchTimeout = null;
 
 const applyFilters = () => {
     router.get(
-        '/admin/dashboard/members',
+        "/admin/dashboard/members",
         {
             search: searchQuery.value || undefined,
-            status: statusFilter.value === 'all' ? undefined : statusFilter.value,
+            status:
+                statusFilter.value === "all" ? undefined : statusFilter.value,
         },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        }
+        { preserveState: true, preserveScroll: true, replace: true },
     );
 };
 
@@ -49,124 +46,191 @@ watch(statusFilter, () => {
     <Head title="إدارة اللاعبين" />
 
     <AdminLayout>
-        <div class="space-y-6">
-            <!-- الترويسة وأزرار التحكم -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="space-y-6" dir="rtl">
+            <!-- الترويسة -->
+            <div
+                class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+            >
                 <div>
-                    <h1 class="text-2xl font-black text-white">إدارة اللاعبين والأعضاء</h1>
-                    <p class="text-xs text-slate-400 mt-1">عرض وتعديل بيانات المشتركين وتتبع صلاحية العضويات</p>
+                    <h1 class="text-xl font-black text-ink-primary sm:text-2xl">
+                        إدارة اللاعبين والأعضاء
+                    </h1>
+                    <p class="mt-1 text-xs text-ink-secondary sm:text-sm">
+                        عرض وتعديل بيانات المشتركين وتتبع صلاحية العضويات
+                    </p>
                 </div>
-                <Link
-                    href="/admin/dashboard/members/create"
-                    class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/20"
-                >
-                    <span>+</span>
-                    <span>إضافة لاعب يدوي</span>
-                </Link>
+              
             </div>
 
-            <!-- شريط البحث والتصفية -->
-            <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row gap-3">
+            <!-- البحث والتصفية -->
+            <div
+                class="flex flex-col gap-3 rounded-2xl border border-line-soft bg-surface-elevated p-4 sm:flex-row"
+            >
                 <div class="relative flex-1">
+                    <Search
+                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                        :stroke-width="2"
+                    />
                     <input
                         v-model="searchQuery"
                         type="text"
-                        placeholder="ابحث بالاسم، برقم الهاتف (09xxxxxxxx)، أو كود العضوية..."
-                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none transition"
+                        placeholder="ابحث بالاسم، برقم الهاتف، أو كود العضوية..."
+                        class="w-full rounded-xl border border-line-strong bg-surface-base py-2.5 pl-4 pr-10 text-xs text-ink-primary placeholder:text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                     />
                 </div>
-                <select
-                    v-model="statusFilter"
-                    class="px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:border-amber-500 focus:outline-none transition"
-                >
-                    <option value="all">جميع الحالات</option>
-                    <option value="active">اشتراك سارٍ</option>
-                    <option value="expired">منتهي الصلاحية</option>
-                    <option value="pending">غير مشترك</option>
-                </select>
+                <div class="relative">
+                    <Filter
+                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                        :stroke-width="2"
+                    />
+                    <select
+                        v-model="statusFilter"
+                        class="w-full appearance-none rounded-xl border border-line-strong bg-surface-base py-2.5 pl-8 pr-10 text-xs text-ink-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 sm:w-auto"
+                    >
+                        <option value="all">جميع الحالات</option>
+                        <option value="active">اشتراك سارٍ</option>
+                        <option value="expired">منتهي الصلاحية</option>
+                        <option value="pending">غير مشترك</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- جدول اللاعبين -->
-            <div class="rounded-2xl bg-slate-900/60 border border-slate-800 overflow-hidden">
+            <!-- الجدول -->
+            <div
+                class="overflow-hidden rounded-2xl border border-line-soft bg-surface-elevated"
+            >
                 <div class="overflow-x-auto">
                     <table class="w-full text-right text-xs">
-                        <thead class="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
+                        <thead
+                            class="border-b border-line-soft bg-surface-soft font-semibold text-ink-secondary"
+                        >
                             <tr>
-                                <th class="py-3.5 px-4">كود العضوية</th>
-                                <th class="py-3.5 px-4">اسم اللاعب</th>
-                                <th class="py-3.5 px-4">رقم الهاتف</th>
-                                <th class="py-3.5 px-4">الجنس / الفترة</th>
-                                <th class="py-3.5 px-4">الباقة الحالية</th>
-                                <th class="py-3.5 px-4">تاريخ الانتهاء</th>
-                                <th class="py-3.5 px-4">الحالة</th>
-                                <th class="py-3.5 px-4 text-center">إجراءات</th>
+                                <th class="px-3 py-3.5 sm:px-4">كود العضوية</th>
+                                <th class="px-3 py-3.5 sm:px-4">اسم اللاعب</th>
+                                <th class="px-3 py-3.5 sm:px-4">الهاتف</th>
+                                <th class="px-3 py-3.5 sm:px-4">الفترة</th>
+                                <th class="px-3 py-3.5 sm:px-4">الباقة</th>
+                                <th class="px-3 py-3.5 sm:px-4">
+                                    تاريخ الانتهاء
+                                </th>
+                                <th class="px-3 py-3.5 sm:px-4">الحالة</th>
+                                <th class="px-3 py-3.5 text-center sm:px-4">
+                                    إجراءات
+                                </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                            <tr v-for="member in members.data" :key="member.id" class="hover:bg-slate-800/30 transition">
-                                <td class="py-3.5 px-4 font-mono font-bold text-amber-400">{{ member.code }}</td>
-                                <td class="py-3.5 px-4">
-                                    <div class="flex flex-wrap items-center gap-2 font-bold text-white">
+                        <tbody
+                            class="divide-y divide-line-soft text-ink-primary"
+                        >
+                            <tr
+                                v-for="member in members.data"
+                                :key="member.id"
+                                class="transition-colors hover:bg-glass-bg-hover"
+                            >
+                                <td
+                                    class="px-3 py-3.5 font-mono font-bold text-brand-600 dark:text-brand-400 sm:px-4"
+                                >
+                                    {{ member.code }}
+                                </td>
+                                <td class="px-3 py-3.5 sm:px-4">
+                                    <div
+                                        class="flex flex-wrap items-center gap-2 font-bold"
+                                    >
                                         <span>{{ member.name }}</span>
                                         <span
-                                            v-if="member.subscription_alert === 'expiring'"
-                                            class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-bold"
+                                            v-if="
+                                                member.subscription_alert ===
+                                                'expiring'
+                                            "
+                                            class="rounded-md border border-warning-500/20 bg-warning-500/10 px-2 py-0.5 text-[10px] font-bold text-warning-600 dark:text-warning-400"
+                                            >قرب الانتهاء</span
                                         >
-                                            ⚠️ قرب الانتهاء
-                                        </span>
                                         <span
-                                            v-else-if="member.subscription_alert === 'grace'"
-                                            class="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-300 border border-orange-500/20 text-[10px] font-bold"
+                                            v-else-if="
+                                                member.subscription_alert ===
+                                                'grace'
+                                            "
+                                            class="rounded-md border border-danger-500/20 bg-danger-500/10 px-2 py-0.5 text-[10px] font-bold text-danger-500"
+                                            >مهلة السماح</span
                                         >
-                                            ⏳ مهلة السماح
-                                        </span>
                                         <span
-                                            v-else-if="member.subscription_alert === 'expired'"
-                                            class="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-300 border border-rose-500/20 text-[10px] font-bold"
+                                            v-else-if="
+                                                member.subscription_alert ===
+                                                'expired'
+                                            "
+                                            class="rounded-md border border-danger-500/20 bg-danger-500/10 px-2 py-0.5 text-[10px] font-bold text-danger-500"
+                                            >منتهي</span
                                         >
-                                            ⛔ منتهي
-                                        </span>
                                     </div>
                                 </td>
-                                <td class="py-3.5 px-4 font-mono text-slate-400" dir="ltr">{{ member.phone }}</td>
-                                <td class="py-3.5 px-4">
-                                    <span class="inline-flex items-center gap-1 text-[11px]">
-                                        {{ member.gender === 'ذكر' ? '🚹 مسائي' : '🚺 صباحي' }}
+                                <td
+                                    class="px-3 py-3.5 font-mono text-ink-secondary sm:px-4"
+                                    dir="ltr"
+                                >
+                                    {{ member.phone }}
+                                </td>
+                                <td class="px-3 py-3.5 sm:px-4">
+                                    <span
+                                        class="inline-flex items-center gap-1 text-[11px]"
+                                    >
+                                        <span
+                                            v-if="member.gender === 'ذكر'"
+                                            class="text-brand-500"
+                                            ><User
+                                                class="h-3.5 w-3.5"
+                                                :stroke-width="2.5"
+                                        /></span>
+                                        <span v-else class="text-brand-500"
+                                            ><User
+                                                class="h-3.5 w-3.5"
+                                                :stroke-width="2.5"
+                                        /></span>
+                                        {{
+                                            member.gender === "ذكر"
+                                                ? "مسائي"
+                                                : "صباحي"
+                                        }}
                                     </span>
                                 </td>
-                                <td class="py-3.5 px-4">{{ member.plan }}</td>
-                                <td class="py-3.5 px-4 font-mono text-slate-400">{{ member.expiry }}</td>
-                                <td class="py-3.5 px-4">
+                                <td class="px-3 py-3.5 sm:px-4">
+                                    {{ member.plan }}
+                                </td>
+                                <td
+                                    class="px-3 py-3.5 font-mono text-ink-secondary sm:px-4"
+                                >
+                                    {{ member.expiry }}
+                                </td>
+                                <td class="px-3 py-3.5 sm:px-4">
                                     <span
                                         v-if="member.status === 'active'"
-                                        class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold"
+                                        class="rounded-md border border-success-500/20 bg-success-500/10 px-2 py-0.5 text-[10px] font-bold text-success-600 dark:text-success-400"
+                                        >سارٍ</span
                                     >
-                                        سارٍ
-                                    </span>
                                     <span
                                         v-else-if="member.status === 'expired'"
-                                        class="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold"
+                                        class="rounded-md border border-danger-500/20 bg-danger-500/10 px-2 py-0.5 text-[10px] font-bold text-danger-500"
+                                        >منتهٍ</span
                                     >
-                                        منتهٍ
-                                    </span>
                                     <span
                                         v-else
-                                        class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px] font-bold"
+                                        class="rounded-md bg-glass-bg px-2 py-0.5 text-[10px] font-bold text-ink-muted"
+                                        >معلق</span
                                     >
-                                        معلق
-                                    </span>
                                 </td>
-                                <td class="py-3.5 px-4 text-center">
+                                <td class="px-3 py-3.5 text-center sm:px-4">
                                     <Link
                                         :href="`/admin/dashboard/finance?member=${member.code}`"
-                                        class="px-2.5 py-1 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 rounded-lg text-[10px] font-bold transition inline-block"
+                                        class="inline-block rounded-lg border border-line-soft bg-surface-base px-2.5 py-1 text-[10px] font-bold text-ink-secondary transition hover:border-brand-500/30 hover:bg-brand-500/10 hover:text-brand-600 dark:hover:text-brand-400"
                                     >
                                         سجل الاشتراكات
                                     </Link>
                                 </td>
                             </tr>
                             <tr v-if="members.data.length === 0">
-                                <td colspan="8" class="py-8 text-center text-slate-500 text-xs">
+                                <td
+                                    colspan="8"
+                                    class="py-8 text-center text-xs text-ink-muted"
+                                >
                                     لا يوجد لاعب يطابق معايير البحث.
                                 </td>
                             </tr>
@@ -174,15 +238,22 @@ watch(statusFilter, () => {
                     </table>
                 </div>
 
-                <!-- الترقيم (Pagination) -->
-                <div v-if="members.links && members.links.length > 3" class="p-4 border-t border-slate-800 flex justify-center gap-1">
+                <!-- الترقيم -->
+                <div
+                    v-if="members.links && members.links.length > 3"
+                    class="flex justify-center gap-1 border-t border-line-soft p-4"
+                >
                     <Link
                         v-for="(link, index) in members.links"
                         :key="index"
                         :href="link.url || '#'"
                         v-html="link.label"
-                        class="px-3 py-1 text-xs rounded-lg border transition"
-                        :class="link.active ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'"
+                        class="rounded-lg border px-3 py-1 text-xs transition-colors"
+                        :class="
+                            link.active
+                                ? 'border-brand-500 bg-brand-500 font-bold text-white'
+                                : 'border-line-strong bg-surface-base text-ink-secondary hover:text-ink-primary'
+                        "
                         :disabled="!link.url"
                     />
                 </div>

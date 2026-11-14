@@ -1,7 +1,8 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { Head, useForm } from "@inertiajs/vue3";
+import { ref } from "vue";
+import AdminLayout from "@/Layouts/AdminLayout.vue";
+import { Plus, Users, X, Edit2, CheckCircle2, AlertCircle } from "@lucide/vue";
 
 const props = defineProps({
     plans: {
@@ -14,7 +15,7 @@ const showModal = ref(false);
 const editingPlan = ref(null);
 
 const form = useForm({
-    name: '',
+    name: "",
     days: 30,
     price: 0,
     is_active: true,
@@ -48,7 +49,7 @@ const savePlan = () => {
             },
         });
     } else {
-        form.post('/admin/dashboard/plans', {
+        form.post("/admin/dashboard/plans", {
             onSuccess: () => {
                 showModal.value = false;
             },
@@ -61,139 +62,250 @@ const savePlan = () => {
     <Head title="إدارة الباقات والأسعار" />
 
     <AdminLayout>
-        <div class="space-y-6">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="space-y-6" dir="rtl">
+            <!-- الترويسة -->
+            <div
+                class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+            >
                 <div>
-                    <h1 class="text-2xl font-black text-white">باقات واشتراكات الصالة</h1>
-                    <p class="text-xs text-slate-400 mt-1">تحديد مدة وصلاحية وتسعير الخطط وتتبع المشتركين النشطين في كل باقة</p>
+                    <h1 class="text-xl font-black text-ink-primary sm:text-2xl">
+                        باقات واشتراكات الصالة
+                    </h1>
+                    <p class="mt-1 text-xs text-ink-secondary sm:text-sm">
+                        تحديد مدة وصلاحية وتسعير الخطط وتتبع المشتركين النشطين
+                        في كل باقة
+                    </p>
                 </div>
                 <button
                     type="button"
                     @click="openCreate"
-                    class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/20 cursor-pointer"
+                    class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-glow transition hover:bg-brand-400"
                 >
-                    <span>+</span>
+                    <Plus class="h-4 w-4" :stroke-width="2.5" />
                     <span>إضافة باقة جديدة</span>
                 </button>
             </div>
 
-            <!-- بطاقات الباقات الحقيقية المجلوبة من السيرفر -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- بطاقات الباقات -->
+            <div class="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3">
                 <div
                     v-for="plan in plans"
                     :key="plan.id"
-                    class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between space-y-6 relative overflow-hidden group hover:border-slate-700 transition"
+                    class="relative flex flex-col justify-between space-y-5 overflow-hidden rounded-2xl border border-line-soft bg-surface-elevated p-5 shadow-sm transition-all hover:border-brand-500/30 sm:space-y-6 sm:p-6"
                 >
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-mono font-bold text-amber-400">صلاحية: {{ plan.days }} يوم</span>
                             <span
-                                :class="[
-                                    'text-[10px] px-2 py-0.5 rounded-md font-bold border',
-                                    plan.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800 text-slate-400 border-slate-700'
-                                ]"
+                                class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400"
                             >
-                                {{ plan.is_active ? 'متاحة للتسجيل' : 'موقوفة' }}
+                                صلاحية: {{ plan.days }} يوم
+                            </span>
+                            <span
+                                class="rounded-md border px-2 py-0.5 text-[10px] font-bold"
+                                :class="
+                                    plan.is_active
+                                        ? 'border-success-500/20 bg-success-500/10 text-success-600 dark:text-success-400'
+                                        : 'border-line-strong bg-glass-bg text-ink-muted'
+                                "
+                            >
+                                {{
+                                    plan.is_active ? "متاحة للتسجيل" : "موقوفة"
+                                }}
                             </span>
                         </div>
-                        <h3 class="text-lg font-black text-white">{{ plan.name }}</h3>
+
+                        <h3 class="text-lg font-black text-ink-primary">
+                            {{ plan.name }}
+                        </h3>
+
                         <div class="flex items-baseline gap-1">
-                            <span class="text-3xl font-black text-white font-mono">{{ plan.price.toLocaleString() }}</span>
-                            <span class="text-xs text-slate-400">ل.س</span>
+                            <span
+                                class="font-mono text-2xl font-black text-ink-primary sm:text-3xl"
+                            >
+                                {{ plan.price.toLocaleString() }}
+                            </span>
+                            <span class="text-xs text-ink-muted">ل.س</span>
                         </div>
-                        <p class="text-xs text-slate-400 pt-2 border-t border-slate-800">
-                            👥 المشتركون الحاليون: <strong class="text-white font-mono">{{ plan.active_members }}</strong> لاعب
-                        </p>
+
+                        <div
+                            class="flex items-center gap-1.5 border-t border-line-soft pt-3 text-xs text-ink-secondary"
+                        >
+                            <Users
+                                class="h-3.5 w-3.5 text-brand-500"
+                                :stroke-width="2"
+                            />
+                            <span>المشتركون الحاليون:</span>
+                            <strong
+                                class="font-mono font-bold text-ink-primary"
+                                >{{ plan.active_members }}</strong
+                            >
+                            <span>لاعب</span>
+                        </div>
                     </div>
 
-                    <div class="flex items-center gap-2 pt-2">
-                        <button
-                            type="button"
-                            @click="openEdit(plan)"
-                            class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition border border-slate-700/80 cursor-pointer"
-                        >
-                            تعديل السعر والمدة
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        @click="openEdit(plan)"
+                        class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface-base py-2 text-xs font-semibold text-ink-secondary transition hover:border-brand-500/30 hover:bg-brand-500/5 hover:text-brand-600 dark:hover:text-brand-400"
+                    >
+                        <Edit2 class="h-3.5 w-3.5" :stroke-width="2" />
+                        <span>تعديل السعر والمدة</span>
+                    </button>
                 </div>
 
-                <div v-if="plans.length === 0" class="col-span-3 py-12 text-center text-slate-500 text-xs">
+                <div
+                    v-if="plans.length === 0"
+                    class="col-span-full py-12 text-center text-xs text-ink-muted"
+                >
                     لا توجد أي باقات مدخلة في النظام حتى الآن.
                 </div>
             </div>
 
-            <!-- نافذة التعديل والإضافة (Modal) -->
-            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
-                    <h3 class="text-base font-bold text-white">{{ editingPlan ? 'تعديل الباقة' : 'إضافة باقة جديدة' }}</h3>
+            <!-- Modal (نافذة التعديل والإضافة) -->
+            <div
+                v-if="showModal"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+                <div
+                    class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    @click="showModal = false"
+                ></div>
+
+                <div
+                    class="relative w-full max-w-md space-y-5 rounded-3xl border border-line-soft bg-surface-elevated p-5 shadow-2xl sm:p-6"
+                >
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-ink-primary">
+                            {{
+                                editingPlan
+                                    ? "تعديل الباقة"
+                                    : "إضافة باقة جديدة"
+                            }}
+                        </h3>
+                        <button
+                            type="button"
+                            @click="showModal = false"
+                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted transition hover:bg-glass-bg-hover hover:text-ink-primary"
+                        >
+                            <X class="h-4 w-4" :stroke-width="2" />
+                        </button>
+                    </div>
 
                     <form @submit.prevent="savePlan" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1">اسم الباقة</label>
+                            <label
+                                for="plan-name"
+                                class="mb-1 block text-xs font-medium text-ink-secondary"
+                                >اسم الباقة</label
+                            >
                             <input
+                                id="plan-name"
                                 v-model="form.name"
                                 type="text"
                                 required
-                                class="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl text-xs text-white outline-none transition"
-                                :class="{ 'border-rose-500': form.errors.name }"
+                                class="w-full rounded-xl border bg-surface-base px-3 py-2.5 text-xs text-ink-primary outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-300"
+                                :class="{
+                                    'border-danger-500': form.errors.name,
+                                    'border-line-strong': !form.errors.name,
+                                }"
                             />
-                            <p v-if="form.errors.name" class="text-[11px] text-rose-400 mt-1">{{ form.errors.name }}</p>
+                            <p
+                                v-if="form.errors.name"
+                                class="mt-1 text-[11px] font-medium text-danger-500"
+                            >
+                                {{ form.errors.name }}
+                            </p>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-medium text-slate-300 mb-1">المدة بالأيام</label>
+                                <label
+                                    for="plan-days"
+                                    class="mb-1 block text-xs font-medium text-ink-secondary"
+                                    >المدة بالأيام</label
+                                >
                                 <input
+                                    id="plan-days"
                                     v-model.number="form.days"
                                     type="number"
                                     min="1"
                                     required
-                                    class="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl text-xs text-white font-mono outline-none transition"
-                                    :class="{ 'border-rose-500': form.errors.days }"
+                                    class="w-full rounded-xl border bg-surface-base px-3 py-2.5 font-mono text-xs text-ink-primary outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-300"
+                                    :class="{
+                                        'border-danger-500': form.errors.days,
+                                        'border-line-strong': !form.errors.days,
+                                    }"
                                 />
-                                <p v-if="form.errors.days" class="text-[11px] text-rose-400 mt-1">{{ form.errors.days }}</p>
+                                <p
+                                    v-if="form.errors.days"
+                                    class="mt-1 text-[11px] font-medium text-danger-500"
+                                >
+                                    {{ form.errors.days }}
+                                </p>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-300 mb-1">السعر (ل.س)</label>
+                                <label
+                                    for="plan-price"
+                                    class="mb-1 block text-xs font-medium text-ink-secondary"
+                                    >السعر (ل.س)</label
+                                >
                                 <input
+                                    id="plan-price"
                                     v-model.number="form.price"
                                     type="number"
                                     min="0"
                                     step="1000"
                                     required
-                                    class="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl text-xs text-white font-mono outline-none transition"
-                                    :class="{ 'border-rose-500': form.errors.price }"
+                                    class="w-full rounded-xl border bg-surface-base px-3 py-2.5 font-mono text-xs text-ink-primary outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-300"
+                                    :class="{
+                                        'border-danger-500': form.errors.price,
+                                        'border-line-strong':
+                                            !form.errors.price,
+                                    }"
                                 />
-                                <p v-if="form.errors.price" class="text-[11px] text-rose-400 mt-1">{{ form.errors.price }}</p>
+                                <p
+                                    v-if="form.errors.price"
+                                    class="mt-1 text-[11px] font-medium text-danger-500"
+                                >
+                                    {{ form.errors.price }}
+                                </p>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 pt-2">
+                        <div class="flex items-center gap-2 pt-1">
                             <input
                                 id="is_active"
                                 v-model="form.is_active"
                                 type="checkbox"
-                                class="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                                class="h-4 w-4 cursor-pointer rounded border-line-strong bg-surface-base text-brand-500 focus:ring-2 focus:ring-brand-300 focus:ring-offset-0"
                             />
-                            <label for="is_active" class="text-xs text-slate-300 select-none cursor-pointer">
+                            <label
+                                for="is_active"
+                                class="cursor-pointer select-none text-xs text-ink-secondary"
+                            >
                                 إتاحة هذه الباقة للتسجيل والاشتراك
                             </label>
                         </div>
 
-                        <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-800">
+                        <div
+                            class="flex items-center justify-end gap-2 border-t border-line-soft pt-4"
+                        >
                             <button
                                 type="button"
                                 @click="showModal = false"
-                                class="px-4 py-2 text-xs text-slate-400 hover:text-white transition cursor-pointer"
+                                class="cursor-pointer px-4 py-2 text-xs font-semibold text-ink-muted transition hover:text-ink-primary"
                             >
                                 إلغاء
                             </button>
                             <button
                                 type="submit"
                                 :disabled="form.processing"
-                                class="px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition cursor-pointer"
+                                class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-brand-400 disabled:opacity-50"
                             >
-                                {{ form.processing ? 'جاري الحفظ...' : 'حفظ' }}
+                                <span v-if="form.processing"
+                                    >جاري الحفظ...</span
+                                >
+                                <span v-else>حفظ</span>
                             </button>
                         </div>
                     </form>

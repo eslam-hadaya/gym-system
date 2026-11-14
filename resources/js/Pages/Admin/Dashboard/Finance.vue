@@ -2,6 +2,19 @@
 import { ref } from "vue";
 import { Head, router, usePage } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import {
+    CheckCircle2,
+    XCircle,
+    Info,
+    Search,
+    Check,
+    X,
+    Loader2,
+    Wallet,
+    CreditCard,
+    Banknote,
+    FileText,
+} from "@lucide/vue";
 
 const props = defineProps({
     transactions: Object,
@@ -11,7 +24,7 @@ const props = defineProps({
 
 const page = usePage();
 const processingId = ref(null);
-const actionType = ref(null); // 'verify', 'reject', 'cancel'
+const actionType = ref(null);
 const toastMessage = ref("");
 const toastType = ref("success");
 
@@ -31,35 +44,24 @@ const setFilter = (method) => {
     );
 };
 
-// 1. اعتماد الدفعة وتفعيل العضوية
 const handleVerify = (subId) => {
     if (
         !confirm(
             "هل أنت متأكد من استلام المبلغ واعتماد هذا الاشتراك وتفعيله فوراً؟",
         )
-    ) {
+    )
         return;
-    }
-
     processingId.value = subId;
     actionType.value = "verify";
-
     router.post(
         `/admin/dashboard/finance/verify/${subId}`,
         {},
         {
             preserveScroll: true,
-            onSuccess: () => {
-                showToast(
-                    "تم اعتماد الدفعة وتفعيل العضوية بالتجديد التراكمي بنجاح.",
-                    "success",
-                );
-            },
-            onError: (errors) => {
-                const msg =
-                    Object.values(errors)[0] || "حدث خطأ أثناء اعتماد الدفعة.";
-                showToast(msg, "error");
-            },
+            onSuccess: () =>
+                showToast("تم اعتماد الدفعة وتفعيل العضوية بنجاح.", "success"),
+            onError: (errors) =>
+                showToast(Object.values(errors)[0] || "حدث خطأ.", "error"),
             onFinish: () => {
                 processingId.value = null;
                 actionType.value = null;
@@ -68,28 +70,22 @@ const handleVerify = (subId) => {
     );
 };
 
-// 2. رفض طلب الاشتراك المعلق
 const handleReject = (subId) => {
-    if (!confirm("هل أنت متأكد من رفض طلب هذا الاشتراك؟")) {
-        return;
-    }
-
+    if (!confirm("هل أنت متأكد من رفض طلب هذا الاشتراك؟")) return;
     processingId.value = subId;
     actionType.value = "reject";
-
     router.post(
         `/admin/dashboard/finance/reject/${subId}`,
         {},
         {
             preserveScroll: true,
-            onSuccess: () => {
-                showToast("تم رفض طلب الاشتراك وإلغاء المعاملة بنجاح.", "info");
-            },
-            onError: (errors) => {
-                const msg =
-                    Object.values(errors)[0] || "تعذر إتمام عملية الرفض.";
-                showToast(msg, "error");
-            },
+            onSuccess: () =>
+                showToast("تم رفض طلب الاشتراك وإلغاء المعاملة.", "info"),
+            onError: (errors) =>
+                showToast(
+                    Object.values(errors)[0] || "تعذر إتمام عملية الرفض.",
+                    "error",
+                ),
             onFinish: () => {
                 processingId.value = null;
                 actionType.value = null;
@@ -98,34 +94,23 @@ const handleReject = (subId) => {
     );
 };
 
-// 3. إلغاء اشتراك نشط ومعتمد من قبل الأدمن
 const handleCancelActive = (subId, memberName) => {
-    if (
-        !confirm(
-            `هل أنت متأكد من إلغاء هذا الاشتراك المعتمد للاعب (${memberName})؟ سيتم إيقاف صلاحية دخوله للصالة فوراً دون استرجاع مالي.`,
-        )
-    ) {
+    if (!confirm(`هل أنت متأكد من إلغاء هذا الاشتراك للاعب (${memberName})؟`))
         return;
-    }
-
     processingId.value = subId;
     actionType.value = "cancel";
-
     router.post(
         `/admin/dashboard/subscription/${subId}/cancel`,
         {},
         {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: () =>
+                showToast(`تم إلغاء اشتراك اللاعب (${memberName}).`, "info"),
+            onError: (errors) =>
                 showToast(
-                    `تم إلغاء اشتراك اللاعب (${memberName}) وإيقاف بطاقة الدخول.`,
-                    "info",
-                );
-            },
-            onError: (errors) => {
-                const msg = Object.values(errors)[0] || "تعذر إلغاء الاشتراك.";
-                showToast(msg, "error");
-            },
+                    Object.values(errors)[0] || "تعذر إلغاء الاشتراك.",
+                    "error",
+                ),
             onFinish: () => {
                 processingId.value = null;
                 actionType.value = null;
@@ -143,7 +128,7 @@ const formatPrice = (val) => {
     <Head title="إدارة الصندوق ومطابقة المدفوعات" />
 
     <AdminLayout>
-        <!-- الإشعار المنبثق Toast -->
+        <!-- Toast -->
         <transition
             enter-active-class="transition duration-300 ease-out"
             enter-from-class="transform translate-y-4 opacity-0"
@@ -154,265 +139,264 @@ const formatPrice = (val) => {
         >
             <div
                 v-if="toastMessage"
-                class="fixed bottom-6 left-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-medium"
+                class="fixed bottom-6 left-6 z-50 flex items-center gap-3 rounded-xl px-5 py-3 text-sm font-medium text-white shadow-2xl"
                 :class="{
-                    'bg-emerald-600 border border-emerald-500':
-                        toastType === 'success',
-                    'bg-rose-600 border border-rose-500': toastType === 'error',
-                    'bg-slate-800 border border-slate-700':
+                    'bg-success-500': toastType === 'success',
+                    'bg-danger-500': toastType === 'error',
+                    'bg-surface-elevated border border-line-strong text-ink-primary':
                         toastType === 'info',
                 }"
             >
-                <span v-if="toastType === 'success'">✓</span>
-                <span v-else-if="toastType === 'error'">✕</span>
-                <span v-else>ℹ</span>
+                <CheckCircle2
+                    v-if="toastType === 'success'"
+                    class="h-4 w-4"
+                    :stroke-width="2.5"
+                />
+                <XCircle
+                    v-else-if="toastType === 'error'"
+                    class="h-4 w-4"
+                    :stroke-width="2.5"
+                />
+                <Info v-else class="h-4 w-4" :stroke-width="2.5" />
                 <span>{{ toastMessage }}</span>
             </div>
         </transition>
 
-        <div class="space-y-6">
-            <!-- ترويسة الصفحة والفلاتر -->
+        <div class="space-y-6" dir="rtl">
+            <!-- الترويسة والفلاتر -->
             <div
-                class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+                class="flex flex-col justify-between gap-4 md:flex-row md:items-center"
             >
                 <div>
                     <h1
-                        class="text-2xl font-black text-slate-900 tracking-tight"
+                        class="text-xl font-black tracking-tight text-ink-primary sm:text-2xl"
                     >
                         إدارة الصندوق ومطابقة الحوالات
                     </h1>
-                    <p class="text-sm text-slate-500 mt-1">
+                    <p class="mt-1 text-xs text-ink-secondary sm:text-sm">
                         تدقيق ومطابقة إشعارات شام كاش والمقبوضات النقدية واعتماد
                         وإلغاء الاشتراكات
                     </p>
                 </div>
 
                 <div
-                    class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200"
+                    class="inline-flex flex-wrap rounded-xl border border-line-soft bg-surface-elevated p-1"
                 >
                     <button
-                        type="button"
                         @click="setFilter('all')"
-                        :class="[
-                            'px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                        class="rounded-lg px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2"
+                        :class="
                             currentMethod === 'all' || !currentMethod
-                                ? 'bg-white text-slate-900 shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900',
-                        ]"
+                                ? 'bg-brand-500 text-white shadow-sm'
+                                : 'text-ink-secondary hover:text-ink-primary'
+                        "
                     >
                         جميع المعاملات
                     </button>
                     <button
-                        type="button"
                         @click="setFilter('shamcash')"
-                        :class="[
-                            'px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                        class="rounded-lg px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2"
+                        :class="
                             currentMethod === 'shamcash'
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-emerald-700',
-                        ]"
+                                ? 'bg-brand-500 text-white shadow-sm'
+                                : 'text-ink-secondary hover:text-brand-500'
+                        "
                     >
                         حوالات شام كاش
                     </button>
                     <button
-                        type="button"
                         @click="setFilter('cash')"
-                        :class="[
-                            'px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                        class="rounded-lg px-3 py-1.5 text-xs font-bold transition-all sm:px-4 sm:py-2"
+                        :class="
                             currentMethod === 'cash'
-                                ? 'bg-sky-600 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-sky-700',
-                        ]"
+                                ? 'bg-brand-500 text-white shadow-sm'
+                                : 'text-ink-secondary hover:text-brand-500'
+                        "
                     >
-                        المقبوضات النقدية (كاش)
+                        المقبوضات النقدية
                     </button>
                 </div>
             </div>
 
-            <!-- بطاقات الإحصائيات -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- الإحصائيات -->
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
                 <div
-                    class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs"
+                    class="rounded-2xl border border-line-soft bg-surface-elevated p-5 shadow-sm"
                 >
-                    <span class="text-xs font-bold text-slate-400"
+                    <span class="text-xs font-bold text-ink-muted"
                         >إجمالي الدخل المعتمد</span
                     >
-                    <p class="text-xl font-black text-slate-900 mt-1">
+                    <p class="mt-1 text-xl font-black text-ink-primary">
                         {{ formatPrice(stats.total_income) }}
                     </p>
                 </div>
-
                 <div
-                    class="bg-white p-5 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-xs"
+                    class="rounded-2xl border border-success-500/20 bg-success-500/5 p-5 shadow-sm"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-emerald-700"
-                            >دخل شام كاش الموثق</span
+                        <span
+                            class="text-xs font-bold text-success-600 dark:text-success-400"
+                            >دخل شام كاش</span
                         >
                         <span
-                            class="w-2 h-2 rounded-full bg-emerald-500"
+                            class="h-2 w-2 rounded-full bg-success-500"
                         ></span>
                     </div>
-                    <p class="text-xl font-black text-emerald-900 mt-1">
+                    <p class="mt-1 text-xl font-black text-ink-primary">
                         {{ formatPrice(stats.shamcash_income) }}
                     </p>
                 </div>
-
                 <div
-                    class="bg-white p-5 rounded-2xl border border-sky-100 bg-sky-50/20 shadow-xs"
+                    class="rounded-2xl border border-brand-500/20 bg-brand-500/5 p-5 shadow-sm"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-sky-700"
-                            >المقبوضات النقدية المعتمدة</span
+                        <span
+                            class="text-xs font-bold text-brand-600 dark:text-brand-400"
+                            >المقبوضات النقدية</span
                         >
-                        <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                        <span class="h-2 w-2 rounded-full bg-brand-500"></span>
                     </div>
-                    <p class="text-xl font-black text-sky-900 mt-1">
+                    <p class="mt-1 text-xl font-black text-ink-primary">
                         {{ formatPrice(stats.cash_income) }}
                     </p>
                 </div>
-
                 <div
-                    class="bg-white p-5 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-xs"
+                    class="rounded-2xl border border-warning-500/20 bg-warning-500/5 p-5 shadow-sm"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-amber-800"
-                            >طلبات وحوالات قيد التدقيق</span
+                        <span
+                            class="text-xs font-bold text-warning-600 dark:text-warning-400"
+                            >طلبات قيد التدقيق</span
                         >
                         <span
-                            class="px-2 py-0.5 text-xs font-black bg-amber-200 text-amber-900 rounded-full"
+                            class="rounded-full bg-warning-500/20 px-2 py-0.5 text-xs font-black text-warning-600 dark:text-warning-400"
                         >
                             {{ stats.pending_count || 0 }}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-2">
+                    <p class="mt-2 text-[11px] text-ink-secondary">
                         تتطلب مطابقة واعتماد الكابتن
                     </p>
                 </div>
             </div>
 
-            <!-- جدول المعاملات -->
+            <!-- الجدول -->
             <div
-                class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden"
+                class="overflow-hidden rounded-2xl border border-line-soft bg-surface-elevated"
             >
                 <div class="overflow-x-auto">
                     <table class="w-full text-right text-sm">
                         <thead
-                            class="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs font-bold"
+                            class="border-b border-line-soft bg-surface-soft text-xs font-bold text-ink-secondary"
                         >
                             <tr>
-                                <th class="p-4">رقم المعاملة</th>
-                                <th class="p-4">اللاعب</th>
-                                <th class="p-4">الباقة المختارة</th>
-                                <th class="p-4">المبلغ</th>
-                                <th class="p-4">طريقة الدفع</th>
-                                <th class="p-4">رقم إشعار الحوالة (المرجع)</th>
-                                <th class="p-4">تاريخ الطلب</th>
-                                <th class="p-4">الحالة</th>
-                                <th class="p-4 text-center">الإجراء المالي</th>
+                                <th class="p-3 sm:p-4">رقم المعاملة</th>
+                                <th class="p-3 sm:p-4">اللاعب</th>
+                                <th class="p-3 sm:p-4">الباقة</th>
+                                <th class="p-3 sm:p-4">المبلغ</th>
+                                <th class="p-3 sm:p-4">طريقة الدفع</th>
+                                <th class="p-3 sm:p-4">رقم الإشعار</th>
+                                <th class="p-3 sm:p-4">التاريخ</th>
+                                <th class="p-3 sm:p-4">الحالة</th>
+                                <th class="p-3 text-center sm:p-4">الإجراء</th>
                             </tr>
                         </thead>
                         <tbody
-                            class="divide-y divide-slate-100 text-slate-700 font-medium"
+                            class="divide-y divide-line-soft font-medium text-ink-primary"
                         >
                             <tr
                                 v-for="item in transactions.data"
                                 :key="item.subscription_id"
-                                class="hover:bg-slate-50/60 transition-colors"
+                                class="transition-colors hover:bg-glass-bg-hover"
                             >
                                 <td
-                                    class="p-4 text-xs font-mono text-slate-400 font-bold"
+                                    class="p-3 font-mono text-[11px] font-bold text-ink-muted sm:p-4"
                                 >
                                     {{ item.id }}
                                 </td>
-                                <td class="p-4">
-                                    <div class="font-bold text-slate-900">
+                                <td class="p-3 sm:p-4">
+                                    <div class="font-bold">
                                         {{ item.member }}
                                     </div>
                                     <div
-                                        class="text-xs text-slate-400 font-mono mt-0.5"
+                                        class="mt-0.5 font-mono text-[10px] text-ink-muted"
                                     >
                                         {{ item.member_code }}
                                     </div>
                                 </td>
-                                <td class="p-4">
-                                    <span class="font-bold text-slate-800">{{
+                                <td class="p-3 sm:p-4">
+                                    <span class="font-bold">{{
                                         item.plan_name
                                     }}</span>
-                                    <span class="text-xs text-slate-400 block"
+                                    <span
+                                        class="block text-[10px] text-ink-muted"
                                         >{{ item.plan_days }} يوماً</span
                                     >
                                 </td>
-                                <td class="p-4 font-black text-slate-900">
+                                <td class="p-3 font-black sm:p-4">
                                     {{ formatPrice(item.amount) }}
                                 </td>
-                                <td class="p-4">
+                                <td class="p-3 sm:p-4">
                                     <span
                                         v-if="item.method === 'shamcash'"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        class="inline-flex items-center gap-1.5 rounded-lg border border-success-500/20 bg-success-500/10 px-2.5 py-1 text-[10px] font-black text-success-600 dark:text-success-400"
                                     >
                                         <span
-                                            class="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                                            class="h-1.5 w-1.5 rounded-full bg-success-500"
                                         ></span>
                                         شام كاش
                                     </span>
                                     <span
                                         v-else
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black bg-sky-50 text-sky-700 border border-sky-200"
+                                        class="inline-flex items-center gap-1.5 rounded-lg border border-brand-500/20 bg-brand-500/10 px-2.5 py-1 text-[10px] font-black text-brand-600 dark:text-brand-400"
                                     >
                                         <span
-                                            class="w-1.5 h-1.5 rounded-full bg-sky-500"
+                                            class="h-1.5 w-1.5 rounded-full bg-brand-500"
                                         ></span>
-                                        نقداً (كاش)
+                                        نقداً
                                     </span>
                                 </td>
-                                <td class="p-4">
+                                <td class="p-3 sm:p-4">
                                     <span
                                         v-if="item.method === 'shamcash'"
-                                        class="font-mono text-xs font-black px-2 py-1 bg-slate-100 border border-slate-200 text-slate-800 rounded-md select-all"
+                                        class="select-all rounded-md border border-line-soft bg-surface-base px-2 py-1 font-mono text-[11px] font-black text-ink-primary"
                                     >
                                         {{ item.ref }}
                                     </span>
                                     <span
                                         v-else
-                                        class="text-xs text-slate-400 font-medium"
+                                        class="text-[11px] text-ink-muted"
+                                        >{{ item.ref }}</span
                                     >
-                                        {{ item.ref }}
-                                    </span>
                                 </td>
                                 <td
-                                    class="p-4 text-xs text-slate-500 font-mono"
+                                    class="p-3 font-mono text-[11px] text-ink-secondary sm:p-4"
                                 >
                                     {{ item.date }}
                                 </td>
-                                <td class="p-4">
+                                <td class="p-3 sm:p-4">
                                     <span
                                         v-if="item.status === 'verified'"
-                                        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        class="inline-flex rounded-md border border-success-500/20 bg-success-500/10 px-2.5 py-1 text-[10px] font-bold text-success-600 dark:text-success-400"
+                                        >معتمد ومفعّل</span
                                     >
-                                        معتمد ومفعّل
-                                    </span>
                                     <span
                                         v-else-if="item.status === 'pending'"
-                                        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                                        class="inline-flex animate-pulse rounded-md border border-warning-500/20 bg-warning-500/10 px-2.5 py-1 text-[10px] font-bold text-warning-600 dark:text-warning-400"
+                                        >قيد التدقيق</span
                                     >
-                                        قيد التدقيق
-                                    </span>
                                     <span
                                         v-else
-                                        class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                                        class="inline-flex rounded-md border border-danger-500/20 bg-danger-500/10 px-2.5 py-1 text-[10px] font-bold text-danger-500"
+                                        >مرفوض / ملغى</span
                                     >
-                                        مرفوض / ملغى
-                                    </span>
                                 </td>
-                                <td class="p-4 text-center">
-                                    <!-- إجراءات الطلب المعلق: اعتماد أو رفض -->
+                                <td class="p-3 text-center sm:p-4">
                                     <div
                                         v-if="item.status === 'pending'"
                                         class="flex items-center justify-center gap-2"
                                     >
                                         <button
-                                            type="button"
                                             @click="
                                                 handleVerify(
                                                     item.subscription_id,
@@ -422,21 +406,25 @@ const formatPrice = (val) => {
                                                 processingId ===
                                                 item.subscription_id
                                             "
-                                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                                            class="flex cursor-pointer items-center gap-1.5 rounded-lg bg-success-500 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-all hover:bg-success-600 disabled:opacity-50 sm:px-3 sm:text-xs"
                                         >
-                                            <span
+                                            <Loader2
                                                 v-if="
                                                     processingId ===
                                                         item.subscription_id &&
                                                     actionType === 'verify'
                                                 "
-                                                class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"
-                                            ></span>
+                                                class="h-3 w-3 animate-spin"
+                                                :stroke-width="2.5"
+                                            />
+                                            <Check
+                                                v-else
+                                                class="h-3 w-3"
+                                                :stroke-width="3"
+                                            />
                                             اعتماد
                                         </button>
-
                                         <button
-                                            type="button"
                                             @click="
                                                 handleReject(
                                                     item.subscription_id,
@@ -446,27 +434,30 @@ const formatPrice = (val) => {
                                                 processingId ===
                                                 item.subscription_id
                                             "
-                                            class="px-2.5 py-1.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold rounded-lg transition-all disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                                            class="flex cursor-pointer items-center gap-1 rounded-lg border border-danger-500/20 bg-surface-base px-2.5 py-1.5 text-[10px] font-bold text-danger-500 transition-all hover:bg-danger-500/10 disabled:opacity-50"
                                         >
-                                            <span
+                                            <Loader2
                                                 v-if="
                                                     processingId ===
                                                         item.subscription_id &&
                                                     actionType === 'reject'
                                                 "
-                                                class="inline-block w-3 h-3 border-2 border-rose-600 border-t-transparent rounded-full animate-spin"
-                                            ></span>
+                                                class="h-3 w-3 animate-spin"
+                                                :stroke-width="2.5"
+                                            />
+                                            <X
+                                                v-else
+                                                class="h-3 w-3"
+                                                :stroke-width="3"
+                                            />
                                             رفض
                                         </button>
                                     </div>
-
-                                    <!-- إجراء الاشتراك المعتمد: إلغاء الصلاحية من قبل الأدمن -->
                                     <div
                                         v-else-if="item.status === 'verified'"
                                         class="flex items-center justify-center"
                                     >
                                         <button
-                                            type="button"
                                             @click="
                                                 handleCancelActive(
                                                     item.subscription_id,
@@ -477,36 +468,33 @@ const formatPrice = (val) => {
                                                 processingId ===
                                                 item.subscription_id
                                             "
-                                            class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold rounded-lg transition-all disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                                            class="flex cursor-pointer items-center gap-1 rounded-lg border border-danger-500/20 bg-danger-500/5 px-2.5 py-1.5 text-[10px] font-bold text-danger-500 transition-all hover:bg-danger-500/10 disabled:opacity-50 sm:px-3 sm:text-xs"
                                         >
-                                            <span
+                                            <Loader2
                                                 v-if="
                                                     processingId ===
                                                         item.subscription_id &&
                                                     actionType === 'cancel'
                                                 "
-                                                class="inline-block w-3 h-3 border-2 border-rose-600 border-t-transparent rounded-full animate-spin"
-                                            ></span>
-                                            إلغاء الاشتراك
+                                                class="h-3 w-3 animate-spin"
+                                                :stroke-width="2.5"
+                                            />
+                                            إلغاء
                                         </button>
                                     </div>
-
-                                    <!-- العمليات المنتهية أو المرفوضة مسبقاً -->
                                     <span
                                         v-else
-                                        class="text-xs text-slate-300 font-medium"
+                                        class="text-[10px] font-medium text-ink-muted"
                                         >مكتمل</span
                                     >
                                 </td>
                             </tr>
-
                             <tr v-if="transactions.data.length === 0">
                                 <td
                                     colspan="9"
-                                    class="p-8 text-center text-slate-400 text-sm"
+                                    class="p-8 text-center text-sm text-ink-muted"
                                 >
-                                    لا توجد أي معاملات مسجلة ضمن هذا التصنيف
-                                    حالياً.
+                                    لا توجد أي معاملات مسجلة حالياً.
                                 </td>
                             </tr>
                         </tbody>

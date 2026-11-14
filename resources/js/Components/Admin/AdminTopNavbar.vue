@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import { usePage, router } from "@inertiajs/vue3";
-import { Menu, Zap, ShieldCheck, LogOut, Activity } from "@lucide/vue";
+import { Menu, ShieldCheck, LogOut } from "@lucide/vue";
 
 defineEmits(["toggleSidebar"]);
 
@@ -56,49 +56,11 @@ const handleLogout = () => {
 
         <!-- ============ الجهة اليسرى: المؤشرات التشغيلية وهوية المدير ============ -->
         <div class="flex items-center gap-2 sm:gap-4">
-            <!-- مؤشر جاهزية قارئ الباب (ديسكتوب) -->
-            <div
-                class="hidden items-center gap-2 rounded-xl border border-line-strong bg-glass-bg px-3 py-1.5 text-xs lg:flex"
-            >
-                <span class="relative flex h-2 w-2 shrink-0">
-                    <span
-                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-400 opacity-75"
-                    ></span>
-                    <span
-                        class="relative inline-flex h-2 w-2 rounded-full bg-success-500"
-                    ></span>
-                </span>
-                <span class="text-ink-secondary">ماسح الـ QR:</span>
-                <span
-                    class="font-mono text-[11px] font-bold text-success-600 dark:text-success-400"
-                >
-                    متصل ومتاح
-                </span>
-            </div>
-
-            <!-- مؤشر السيرفر -->
-            <div
-                class="flex items-center gap-1.5 rounded-xl border border-brand-500/20 bg-brand-500/10 px-2.5 py-1.5 text-xs font-medium text-brand-600 dark:text-brand-400 sm:gap-2 sm:px-3"
-            >
-                <Zap class="h-3.5 w-3.5" :stroke-width="2" />
-                <span class="hidden sm:inline">السيرفر:</span>
-                <span class="font-mono text-[11px]">Online</span>
-            </div>
-
             <!-- اسم المدير -->
             <div
                 class="flex items-center gap-2.5 border-r border-line-soft pr-2.5 sm:pr-3.5"
             >
-                <div
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-line-strong bg-glass-bg text-xs font-bold text-brand-600 dark:text-brand-400"
-                >
-                    <ShieldCheck
-                        v-if="!user.name"
-                        class="h-4 w-4"
-                        :stroke-width="2"
-                    />
-                    <span v-else>{{ user.name?.charAt(0) }}</span>
-                </div>
+               
                 <div class="hidden text-right md:block">
                     <p
                         class="max-w-[120px] truncate text-xs font-bold leading-tight text-ink-primary"

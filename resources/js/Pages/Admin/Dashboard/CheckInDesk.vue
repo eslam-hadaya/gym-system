@@ -2,6 +2,18 @@
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
 import { Head, useForm, usePage, router } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import {
+    Camera,
+    VideoOff,
+    CheckCircle2,
+    XCircle,
+    ScanLine,
+    Bell,
+    Clock,
+    Loader2,
+    User,
+    CreditCard,
+} from "@lucide/vue";
 
 const props = defineProps({
     pendingRequests: {
@@ -127,7 +139,6 @@ watch(
     { deep: true },
 );
 
-// إرسال الكود
 const submitScanCode = (code) => {
     if (!code || form.processing) return;
     form.member_code = code.trim();
@@ -148,8 +159,6 @@ const handleManualScan = () => {
     submitScanCode(form.member_code);
 };
 
-// تشغيل الكاميرا الحية مع دعم جميع أنواع الكاميرات المتاحة
-// تشغيل كاميرا اللابتوب الأمامية المدمجة
 const startCamera = async () => {
     cameraError.value = "";
     isInitializing.value = true;
@@ -164,13 +173,11 @@ const startCamera = async () => {
             html5QrCode = new Html5Qrcode("qr-reader-box");
         }
 
-        // إعدادات مخصصة لكاميرا اللابتوب الأمامية
         await html5QrCode.start(
-            { facingMode: "user" }, // طلب الكاميرا الأمامية للابتوب حصراً
+            { facingMode: "user" },
             {
                 fps: 15,
                 qrbox: (viewfinderWidth, viewfinderHeight) => {
-                    // حساب الحجم تلقائياً ليتطابق مع شاشة اللابتوب
                     const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
                     const qrboxSize = Math.floor(minEdge * 0.7);
                     return {
@@ -183,7 +190,7 @@ const startCamera = async () => {
                 submitScanCode(decodedText);
             },
             (errorMessage) => {
-                // تجاهل أخطاء الفريمات العادية أثناء انتظار توجيه الكود
+                // تجاهل أخطاء الفريمات
             },
         );
     } catch (err) {
@@ -195,7 +202,7 @@ const startCamera = async () => {
         isInitializing.value = false;
     }
 };
-// إيقاف الكاميرا
+
 const stopCamera = async () => {
     if (html5QrCode && isCameraActive.value) {
         try {
@@ -251,207 +258,236 @@ onBeforeUnmount(() => {
     <Head title="كشك الاستقبال ومسح الدخول" />
 
     <AdminLayout>
-        <div class="space-y-6">
-            <!-- الترويسة والإحصائيات اللحظية -->
+        <div class="space-y-6" dir="rtl">
+            <!-- ============ الترويسة والإحصائيات ============ -->
             <div
-                class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+                class="flex flex-col justify-between gap-4 md:flex-row md:items-center"
             >
                 <div>
                     <h1
-                        class="text-2xl font-black text-slate-900 tracking-tight"
+                        class="text-xl font-black tracking-tight text-ink-primary sm:text-2xl"
                     >
                         كشك الاستقبال وإدارة الدخول
                     </h1>
-                    <p class="text-sm text-slate-500 mt-1">
+                    <p class="mt-1 text-xs text-ink-secondary sm:text-sm">
                         المسح التلقائي بالـ QR عبر الكاميرا الحية أو قارئ
                         الباركود
                     </p>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                     <div
-                        class="px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2"
+                        class="flex items-center gap-2 rounded-xl border border-warning-500/30 bg-warning-500/10 px-3 py-1.5 sm:px-4 sm:py-2"
                     >
                         <span
-                            class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"
+                            class="h-2 w-2 rounded-full bg-warning-500 animate-pulse"
                         ></span>
-                        <span class="text-xs font-bold text-amber-800"
-                            >طلبات معلقة: {{ stats.pending_count || 0 }}</span
+                        <span
+                            class="text-[11px] font-bold text-warning-600 dark:text-warning-400 sm:text-xs"
                         >
+                            طلبات معلقة: {{ stats.pending_count || 0 }}
+                        </span>
                     </div>
                     <div
-                        class="px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2"
+                        class="flex items-center gap-2 rounded-xl border border-success-500/30 bg-success-500/10 px-3 py-1.5 sm:px-4 sm:py-2"
                     >
                         <span
-                            class="w-2.5 h-2.5 rounded-full bg-emerald-500"
+                            class="h-2 w-2 rounded-full bg-success-500"
                         ></span>
-                        <span class="text-xs font-bold text-emerald-800"
-                            >حضور اليوم: {{ stats.valid_count || 0 }}</span
+                        <span
+                            class="text-[11px] font-bold text-success-600 dark:text-success-400 sm:text-xs"
                         >
+                            حضور اليوم: {{ stats.valid_count || 0 }}
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <!-- طلبات الدخول المعلقة -->
+            <!-- ============ طلبات الدخول المعلقة ============ -->
             <div
                 v-if="pendingRequests.length > 0"
-                class="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-6 space-y-4"
+                class="space-y-4 rounded-3xl border border-warning-500/30 bg-warning-500/5 p-4 sm:p-6"
             >
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <span class="text-lg">🛎️</span>
-                        <h2 class="text-base font-black text-amber-950">
+                        <Bell
+                            class="h-5 w-5 text-warning-500"
+                            :stroke-width="2"
+                        />
+                        <h2
+                            class="text-sm font-black text-warning-600 dark:text-warning-400 sm:text-base"
+                        >
                             طلبات الدخول بانتظار الموافقة ({{
                                 pendingRequests.length
                             }})
                         </h2>
                     </div>
-                    <span class="text-xs font-bold text-amber-800 animate-pulse"
-                        >لاعبون بالاستقبال</span
+                    <span
+                        class="text-[10px] font-bold text-warning-500/80 sm:text-xs"
                     >
+                        لاعبون بالاستقبال
+                    </span>
                 </div>
 
                 <div
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                    class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
                 >
                     <div
                         v-for="req in pendingRequests"
                         :key="req.id"
-                        class="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs flex items-center justify-between"
+                        class="flex items-center justify-between rounded-2xl border border-line-soft bg-surface-elevated p-4 shadow-sm"
                     >
                         <div>
-                            <div class="font-black text-slate-900 text-sm">
+                            <div class="text-sm font-black text-ink-primary">
                                 {{ req.name }}
                             </div>
-                            <div class="text-xs text-slate-500 mt-0.5">
+                            <div class="mt-0.5 text-[11px] text-ink-secondary">
                                 <span
-                                    class="font-mono text-emerald-600 font-bold"
+                                    class="font-mono font-bold text-brand-600 dark:text-brand-400"
                                     >{{ req.code }}</span
                                 >
                                 • {{ req.plan }}
                             </div>
                             <span
-                                class="text-[11px] text-slate-400 font-mono block mt-1"
-                                >{{ req.time }}</span
+                                class="mt-1 block font-mono text-[10px] text-ink-muted"
                             >
+                                {{ req.time }}
+                            </span>
                         </div>
 
                         <div class="flex items-center gap-1.5">
                             <button
                                 @click="approveCheckIn(req.id)"
                                 :disabled="processingActionId === req.id"
-                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer disabled:opacity-50"
+                                class="inline-flex items-center gap-1 rounded-xl bg-success-500 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-success-600 disabled:opacity-50 sm:px-3 sm:text-xs"
                             >
-                                دخول ✓
+                                <Loader2
+                                    v-if="processingActionId === req.id"
+                                    class="h-3 w-3 animate-spin"
+                                    :stroke-width="2.5"
+                                />
+                                <CheckCircle2
+                                    v-else
+                                    class="h-3.5 w-3.5"
+                                    :stroke-width="2.5"
+                                />
+                                دخول
                             </button>
                             <button
                                 @click="rejectCheckIn(req.id)"
                                 :disabled="processingActionId === req.id"
-                                class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                                class="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-danger-500/30 bg-danger-500/10 text-danger-500 transition hover:bg-danger-500/20 disabled:opacity-50"
                             >
-                                ✕
+                                <XCircle
+                                    class="h-3.5 w-3.5"
+                                    :stroke-width="2.5"
+                                />
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- منطقة المسح الضوئي وعرض الكاميرا -->
+            <!-- ============ منطقة المسح الضوئي ============ -->
             <div
-                class="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-800 relative overflow-hidden"
+                class="relative overflow-hidden rounded-3xl border border-line-soft bg-surface-elevated p-5 shadow-sm sm:p-6 md:p-8"
             >
-                <div class="max-w-xl mx-auto text-center space-y-6">
-                    <!-- زر تشغيل/إيقاف الكاميرا -->
+                <div class="mx-auto max-w-xl space-y-5 text-center">
+                    <!-- أزرار الكاميرا -->
                     <div class="flex items-center justify-center gap-3">
                         <button
                             v-if="!isCameraActive"
                             type="button"
                             @click="startCamera"
                             :disabled="isInitializing"
-                            class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/60 disabled:opacity-50"
+                            class="inline-flex items-center gap-2 rounded-2xl bg-brand-500 px-5 py-3 text-xs font-black text-white shadow-glow transition hover:bg-brand-400 disabled:opacity-50 sm:px-6 sm:text-sm"
                         >
-                            <span
+                            <Loader2
                                 v-if="isInitializing"
-                                class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
-                            ></span>
-                            <span v-else>📷</span>
-                            <span>{{
-                                isInitializing
-                                    ? "جارٍ تشغيل الكاميرا..."
-                                    : "تشغيل كاميرا الاستقبال للمسح"
-                            }}</span>
+                                class="h-4 w-4 animate-spin"
+                                :stroke-width="2.5"
+                            />
+                            <Camera v-else class="h-4 w-4" :stroke-width="2" />
+                            <span>
+                                {{
+                                    isInitializing
+                                        ? "جارٍ تشغيل الكاميرا..."
+                                        : "تشغيل كاميرا الاستقبال للمسح"
+                                }}
+                            </span>
                         </button>
 
                         <button
                             v-else
                             type="button"
                             @click="stopCamera"
-                            class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-rose-950/60"
+                            class="inline-flex items-center gap-2 rounded-2xl bg-danger-500 px-5 py-3 text-xs font-black text-white shadow-glow transition hover:bg-danger-600 sm:px-6 sm:text-sm"
                         >
-                            <span>⏹️</span>
+                            <VideoOff class="h-4 w-4" :stroke-width="2" />
                             <span>إيقاف تشغيل الكاميرا</span>
                         </button>
                     </div>
 
-                    <!-- رسائل الخطأ -->
+                    <!-- رسالة خطأ الكاميرا -->
                     <div
                         v-if="cameraError"
-                        class="p-3.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold rounded-2xl"
+                        class="flex items-center justify-center gap-2 rounded-2xl border border-danger-500/30 bg-danger-500/10 p-3 text-[11px] font-bold text-danger-500 sm:text-xs"
                     >
+                        <XCircle class="h-4 w-4" :stroke-width="2" />
                         {{ cameraError }}
                     </div>
 
                     <!-- شاشة الكاميرا المباشرة -->
                     <div
                         v-if="isCameraActive"
-                        class="relative w-full max-w-[340px] aspect-square mx-auto rounded-3xl overflow-hidden border-2 border-emerald-500/50 bg-black shadow-2xl"
+                        class="relative mx-auto aspect-square w-full max-w-[300px] overflow-hidden rounded-3xl border-2 border-brand-500/50 bg-black shadow-xl sm:max-w-[340px]"
                     >
-                        <!-- الحاوية التي تحقن المكتبة الفيديو بداخلها -->
-                        <div id="qr-reader-box" class="w-full h-full"></div>
+                        <div id="qr-reader-box" class="h-full w-full"></div>
 
-                        <!-- إطار التوجيه فوق الفيديو مباشرة دون حجب الرؤية -->
                         <div
-                            class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6 z-10"
+                            class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center p-6"
                         >
                             <div
-                                class="relative w-52 h-52 border border-emerald-500/30 rounded-2xl flex items-center justify-center"
+                                class="relative flex h-48 w-48 items-center justify-center rounded-2xl border border-brand-500/30 sm:h-52 sm:w-52"
                             >
-                                <!-- زوايا النيون -->
+                                <!-- زوايا الإطار -->
                                 <span
-                                    class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-xl"
+                                    class="absolute -top-1 -right-1 h-6 w-6 rounded-tr-xl border-t-4 border-r-4 border-brand-500"
                                 ></span>
                                 <span
-                                    class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-xl"
+                                    class="absolute -top-1 -left-1 h-6 w-6 rounded-tl-xl border-t-4 border-l-4 border-brand-500"
                                 ></span>
                                 <span
-                                    class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-xl"
+                                    class="absolute -bottom-1 -right-1 h-6 w-6 rounded-br-xl border-b-4 border-r-4 border-brand-500"
                                 ></span>
                                 <span
-                                    class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl"
+                                    class="absolute -bottom-1 -left-1 h-6 w-6 rounded-bl-xl border-b-4 border-l-4 border-brand-500"
                                 ></span>
 
                                 <!-- خط المسح الليزري -->
                                 <div
-                                    class="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_8px_#f43f5e] animate-bounce"
+                                    class="absolute inset-x-2 h-0.5 bg-brand-500 shadow-[0_0_8px_rgba(var(--color-brand-500),0.8)] animate-bounce"
                                 ></div>
                             </div>
 
                             <span
-                                class="mt-3 text-[11px] font-bold text-emerald-400/90 bg-slate-950/80 px-3 py-1 rounded-full backdrop-blur-xs select-none"
+                                class="mt-3 select-none rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold text-brand-400 backdrop-blur-sm sm:text-[11px]"
                             >
                                 ضع كود الـ QR داخل الإطار
                             </span>
                         </div>
                     </div>
 
-                    <!-- الإدخال اليدوي / قارئ الباركود USB -->
-                    <div class="pt-4 border-t border-slate-800/80">
-                        <p class="text-xs text-slate-400 mb-2">
+                    <!-- الإدخال اليدوي -->
+                    <div class="border-t border-line-soft pt-4">
+                        <p
+                            class="mb-2 text-[11px] text-ink-secondary sm:text-xs"
+                        >
                             أو المسح بقارئ الباركود USB / إدخال الكود يدوياً
                         </p>
                         <form
                             @submit.prevent="handleManualScan"
-                            class="relative max-w-sm mx-auto"
+                            class="relative mx-auto max-w-sm"
                         >
                             <input
                                 ref="codeInput"
@@ -460,13 +496,23 @@ onBeforeUnmount(() => {
                                 placeholder="GYM-1001"
                                 autocomplete="off"
                                 :disabled="form.processing"
-                                class="w-full px-5 py-3.5 bg-slate-950 border-2 border-slate-800 focus:border-emerald-500 rounded-2xl text-center text-lg font-mono font-black tracking-widest text-emerald-400 outline-none transition-all placeholder:text-slate-700"
+                                class="w-full rounded-2xl border-2 border-line-strong bg-surface-base px-5 py-3.5 pr-14 text-center font-mono text-lg font-black tracking-widest text-brand-600 outline-none transition-all placeholder:text-ink-muted focus:border-brand-500 focus:ring-2 focus:ring-brand-300 dark:text-brand-400"
                             />
                             <button
                                 type="submit"
                                 :disabled="form.processing"
-                                class="absolute left-2 top-2 bottom-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs cursor-pointer transition-all"
+                                class="absolute bottom-2 left-2 top-2 inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-3 text-xs font-bold text-white transition hover:bg-brand-400 disabled:opacity-50 sm:px-4"
                             >
+                                <Loader2
+                                    v-if="form.processing"
+                                    class="h-3.5 w-3.5 animate-spin"
+                                    :stroke-width="2.5"
+                                />
+                                <ScanLine
+                                    v-else
+                                    class="h-4 w-4"
+                                    :stroke-width="2"
+                                />
                                 فحص
                             </button>
                         </form>
@@ -474,7 +520,7 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <!-- بطاقة النتيجة Flash Result -->
+            <!-- ============ بطاقة النتيجة ============ -->
             <transition
                 enter-active-class="transition duration-300 ease-out"
                 enter-from-class="transform -translate-y-4 opacity-0"
@@ -482,38 +528,48 @@ onBeforeUnmount(() => {
             >
                 <div
                     v-if="flashResult"
-                    :class="[
-                        'p-6 rounded-3xl border-2 shadow-2xl transition-all',
+                    class="rounded-3xl border-2 p-5 shadow-lg sm:p-6"
+                    :class="
                         flashResult.status === 'valid'
-                            ? 'bg-emerald-600 border-emerald-400 text-white'
-                            : 'bg-rose-600 border-rose-400 text-white',
-                    ]"
+                            ? 'border-success-500 bg-success-500 text-white'
+                            : 'border-danger-500 bg-danger-500 text-white'
+                    "
                 >
-                    <div class="flex items-center justify-between">
+                    <div
+                        class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+                    >
                         <div class="flex items-center gap-4">
                             <div
-                                class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-black bg-white/20"
+                                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20"
                             >
-                                <span v-if="flashResult.status === 'valid'"
-                                    >✓</span
-                                >
-                                <span v-else>✕</span>
+                                <CheckCircle2
+                                    v-if="flashResult.status === 'valid'"
+                                    class="h-6 w-6"
+                                    :stroke-width="2.5"
+                                />
+                                <XCircle
+                                    v-else
+                                    class="h-6 w-6"
+                                    :stroke-width="2.5"
+                                />
                             </div>
                             <div>
                                 <span
-                                    class="text-xs font-mono font-bold opacity-80"
+                                    class="block font-mono text-[11px] font-bold opacity-80"
                                     >{{ flashResult.code }}</span
                                 >
-                                <h3 class="text-xl font-black">
+                                <h3 class="text-lg font-black sm:text-xl">
                                     {{ flashResult.name }}
                                 </h3>
-                                <p class="text-xs opacity-90 font-medium">
+                                <p
+                                    class="text-[11px] font-medium opacity-90 sm:text-xs"
+                                >
                                     {{ flashResult.note }}
                                 </p>
                             </div>
                         </div>
                         <div
-                            class="text-left font-black text-sm bg-black/20 px-4 py-2 rounded-xl"
+                            class="shrink-0 rounded-xl bg-black/20 px-4 py-2 text-center text-xs font-black sm:text-left"
                         >
                             {{ flashResult.plan }}
                         </div>
@@ -521,80 +577,91 @@ onBeforeUnmount(() => {
                 </div>
             </transition>
 
-            <!-- سجل حضور اليوم -->
+            <!-- ============ سجل حضور اليوم ============ -->
             <div
-                class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs"
+                class="overflow-hidden rounded-2xl border border-line-soft bg-surface-elevated"
             >
                 <div
-                    class="p-4 border-b border-slate-100 flex items-center justify-between"
+                    class="flex items-center justify-between border-b border-line-soft p-4"
                 >
-                    <h3 class="font-black text-slate-900 text-sm">
+                    <h3 class="text-sm font-black text-ink-primary">
                         سجل حركات اليوم المباشر
                     </h3>
-                    <span class="text-xs text-slate-400 font-bold"
+                    <span
+                        class="text-[10px] font-bold text-ink-muted sm:text-xs"
                         >آخر 20 حركة</span
                     >
                 </div>
 
-                <table class="w-full text-right text-sm">
-                    <thead
-                        class="bg-slate-50 text-slate-500 text-xs font-bold border-b border-slate-200"
-                    >
-                        <tr>
-                            <th class="p-4">كود العضوية</th>
-                            <th class="p-4">اسم اللاعب</th>
-                            <th class="p-4">الباقة</th>
-                            <th class="p-4">التوقيت</th>
-                            <th class="p-4">الحالة</th>
-                            <th class="p-4">ملاحظة</th>
-                        </tr>
-                    </thead>
-                    <tbody
-                        class="divide-y divide-slate-100 font-medium text-slate-700"
-                    >
-                        <tr v-for="log in todayLogs" :key="log.id">
-                            <td
-                                class="p-4 font-mono font-bold text-xs text-slate-400"
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead
+                            class="border-b border-line-soft bg-surface-soft text-[11px] font-bold text-ink-secondary sm:text-xs"
+                        >
+                            <tr>
+                                <th class="p-3 sm:p-4">كود العضوية</th>
+                                <th class="p-3 sm:p-4">اسم اللاعب</th>
+                                <th class="p-3 sm:p-4">الباقة</th>
+                                <th class="p-3 sm:p-4">التوقيت</th>
+                                <th class="p-3 sm:p-4">الحالة</th>
+                                <th class="p-3 sm:p-4">ملاحظة</th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            class="divide-y divide-line-soft font-medium text-ink-primary"
+                        >
+                            <tr
+                                v-for="log in todayLogs"
+                                :key="log.id"
+                                class="transition-colors hover:bg-glass-bg-hover"
                             >
-                                {{ log.code }}
-                            </td>
-                            <td class="p-4 font-black text-slate-900">
-                                {{ log.name }}
-                            </td>
-                            <td class="p-4 text-xs font-bold text-slate-700">
-                                {{ log.plan }}
-                            </td>
-                            <td class="p-4 font-mono text-xs text-slate-500">
-                                {{ log.time }}
-                            </td>
-                            <td class="p-4">
-                                <span
-                                    v-if="log.status === 'valid'"
-                                    class="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                <td
+                                    class="p-3 font-mono text-xs font-bold text-ink-muted sm:p-4"
                                 >
-                                    دخول مصرح
-                                </span>
-                                <span
-                                    v-else
-                                    class="px-2.5 py-1 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200"
+                                    {{ log.code }}
+                                </td>
+                                <td class="p-3 font-black sm:p-4">
+                                    {{ log.name }}
+                                </td>
+                                <td class="p-3 text-xs font-bold sm:p-4">
+                                    {{ log.plan }}
+                                </td>
+                                <td
+                                    class="p-3 font-mono text-[11px] text-ink-secondary sm:p-4 sm:text-xs"
                                 >
-                                    مرفوض / منتهٍ
-                                </span>
-                            </td>
-                            <td class="p-4 text-xs text-slate-400">
-                                {{ log.note }}
-                            </td>
-                        </tr>
-                        <tr v-if="todayLogs.length === 0">
-                            <td
-                                colspan="6"
-                                class="p-6 text-center text-slate-400 text-xs"
-                            >
-                                لا توجد حركات حضور مسجلة بعد اليوم.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                    {{ log.time }}
+                                </td>
+                                <td class="p-3 sm:p-4">
+                                    <span
+                                        v-if="log.status === 'valid'"
+                                        class="inline-block whitespace-nowrap rounded-lg border border-success-500/30 bg-success-500/10 px-2.5 py-1 text-[10px] font-black text-success-600 dark:text-success-400 sm:text-xs"
+                                    >
+                                        دخول مصرح
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="inline-block whitespace-nowrap rounded-lg border border-danger-500/30 bg-danger-500/10 px-2.5 py-1 text-[10px] font-black text-danger-500 sm:text-xs"
+                                    >
+                                        مرفوض / منتهٍ
+                                    </span>
+                                </td>
+                                <td
+                                    class="p-3 text-[11px] text-ink-muted sm:p-4 sm:text-xs"
+                                >
+                                    {{ log.note }}
+                                </td>
+                            </tr>
+                            <tr v-if="todayLogs.length === 0">
+                                <td
+                                    colspan="6"
+                                    class="p-6 text-center text-xs text-ink-muted"
+                                >
+                                    لا توجد حركات حضور مسجلة بعد اليوم.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </AdminLayout>
