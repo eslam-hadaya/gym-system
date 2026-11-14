@@ -3,46 +3,33 @@ import { ref, onMounted, watch } from "vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import MemberLayout from "@/Layouts/MemberLayout.vue";
 import QRCode from "qrcode";
+import { useCountdown, useRemainingDays } from "@/Composables/useRemainingDays";
 import {
-    useCountdown,
-    useRemainingDays,
-} from "@/Composables/useRemainingDays";
+    Clock,
+    AlertTriangle,
+    CheckCircle2,
+    CalendarDays,
+    History,
+    Loader2,
+    Download,
+    Dumbbell,
+} from "@lucide/vue";
 
 const props = defineProps({
-    member: {
-        type: Object,
-        default: () => ({}),
-    },
-    subscription: {
-        type: Object,
-        default: null,
-    },
-    recentCheckIns: {
-        type: Array,
-        default: () => [],
-    },
-    hasCheckedInToday: {
-        type: Boolean,
-        default: false,
-    },
-    hasPendingCheckIn: {
-        type: Boolean,
-        default: false,
-    },
+    member: { type: Object, default: () => ({}) },
+    subscription: { type: Object, default: null },
+    recentCheckIns: { type: Array, default: () => [] },
+    hasCheckedInToday: { type: Boolean, default: false },
+    hasPendingCheckIn: { type: Boolean, default: false },
 });
 
-const remainingDays = useRemainingDays(
-    () => props.subscription?.end_date,
-);
-const graceCountdown = useCountdown(
-    () => props.subscription?.grace_expires_at,
-);
+const remainingDays = useRemainingDays(() => props.subscription?.end_date);
+const graceCountdown = useCountdown(() => props.subscription?.grace_expires_at);
 
 const qrCanvas = ref(null);
 
 const generateQR = async () => {
     if (!props.member?.member_code || !qrCanvas.value) return;
-
     try {
         await QRCode.toCanvas(
             qrCanvas.value,
@@ -50,10 +37,7 @@ const generateQR = async () => {
             {
                 width: 200,
                 margin: 2,
-                color: {
-                    dark: "#0f172a",
-                    light: "#ffffff",
-                },
+                color: { dark: "#0f172a", light: "#ffffff" },
                 errorCorrectionLevel: "H",
             },
         );
@@ -80,7 +64,6 @@ const downloadQR = () => {
 onMounted(() => {
     generateQR();
 });
-
 watch(
     () => props.member?.member_code,
     () => {
@@ -97,7 +80,6 @@ const requestManualCheckIn = () => {
         props.hasPendingCheckIn
     )
         return;
-
     isRequestingCheckIn.value = true;
     router.post(
         "/member/dashboard/checkin-request",
@@ -128,102 +110,98 @@ const requestManualCheckIn = () => {
     <Head title="لوحة تحكم اللاعب" />
 
     <MemberLayout>
-        <div class="space-y-6">
-            <!-- شريط تنبيه اقتراب انتهاء الاشتراك (آخر 5 أيام) -->
+        <div class="space-y-6" dir="rtl">
+            <!-- ============ شريط التنبيهات ============ -->
             <div
                 v-if="subscription?.is_in_grace_period"
-                class="bg-rose-500/10 border-2 border-rose-500/30 rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+                class="flex flex-col justify-between gap-3 rounded-2xl border border-danger-500/30 bg-danger-500/10 p-4 sm:flex-row sm:items-center sm:p-5"
             >
-                <div class="flex items-center gap-3.5">
-                    <div
-                        class="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl shrink-0"
+                <div class="flex items-start gap-3">
+                    <span
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-danger-500/20 text-danger-500"
                     >
-                        ⏳
-                    </div>
+                        <Clock class="h-4 w-4" :stroke-width="2.5" />
+                    </span>
                     <div>
-                        <h3 class="text-sm font-black text-rose-200">
+                        <h3 class="text-sm font-black text-danger-500">
                             انتهى الاشتراك وأنت الآن ضمن مهلة السماح
                         </h3>
-                        <p class="text-xs text-rose-300/80 mt-0.5">
+                        <p class="mt-0.5 text-xs text-danger-500/80">
                             ينتهي السماح عند وصول العداد للصفر، وبعدها يتوقف
                             الدخول. جدّد اشتراكك الآن.
                         </p>
                     </div>
                 </div>
-
                 <div
                     v-if="graceCountdown.isActive && !graceCountdown.isComplete"
-                    class="flex items-center gap-2 font-mono font-black text-rose-200"
+                    class="flex items-center gap-1.5 font-mono text-base font-black text-danger-500"
                     aria-live="polite"
-                    aria-label="الوقت المتبقي من مهلة السماح"
                 >
-                    <span v-if="graceCountdown.days > 0">
-                        {{ graceCountdown.days }} يوم
+                    <span v-if="graceCountdown.days > 0"
+                        >{{ graceCountdown.days }} ي
                     </span>
-                    <span>{{ String(graceCountdown.hours).padStart(2, "0") }}</span>
-                    <span>:</span>
-                    <span>{{ String(graceCountdown.minutes).padStart(2, "0") }}</span>
-                    <span>:</span>
-                    <span>{{ String(graceCountdown.seconds).padStart(2, "0") }}</span>
+                    <span>{{
+                        String(graceCountdown.hours).padStart(2, "0")
+                    }}</span>:
+                    <span>{{
+                        String(graceCountdown.minutes).padStart(2, "0")
+                    }}</span>:
+                    <span>{{
+                        String(graceCountdown.seconds).padStart(2, "0")
+                    }}</span>
                 </div>
-                <span v-else class="text-xs font-bold text-rose-300">
-                    انتهت مهلة السماح؛ حدّث الصفحة لتحديث حالة الاشتراك.
-                </span>
+                <span v-else class="text-xs font-bold text-danger-500"
+                    >انتهت مهلة السماح؛ حدّث الصفحة.</span
+                >
             </div>
 
             <div
                 v-else-if="subscription && remainingDays <= 5"
-                class="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+                class="flex flex-col justify-between gap-3 rounded-2xl border border-warning-500/30 bg-warning-500/10 p-4 sm:flex-row sm:items-center sm:p-5"
             >
-                <div class="flex items-center gap-3.5">
-                    <div
-                        class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center text-xl shrink-0"
+                <div class="flex items-start gap-3">
+                    <span
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning-500/20 text-warning-600 dark:text-warning-400"
                     >
-                        ⚠️
-                    </div>
+                        <AlertTriangle class="h-4 w-4" :stroke-width="2.5" />
+                    </span>
                     <div>
                         <h3
-                            class="text-sm font-black text-amber-950 dark:text-amber-200"
+                            class="text-sm font-black text-warning-600 dark:text-warning-400"
                         >
                             تنبيه: اقتراب موعد انتهاء الاشتراك
                         </h3>
                         <p
-                            class="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5"
+                            class="mt-0.5 text-xs text-warning-600/80 dark:text-warning-400/80"
                         >
                             يتبقى في باقتك الحالية
-                            <span
-                                class="font-bold font-mono text-amber-600 dark:text-amber-400"
+                            <span class="font-bold font-mono"
+                                >{{ remainingDays }}
+                                {{ remainingDays === 1 ? "يوم" : "أيام" }}</span
                             >
-                                {{ remainingDays }}
-                                {{
-                                    remainingDays === 1
-                                        ? "يوم"
-                                        : "أيام"
-                                }}
-                            </span>
-                            فقط (ينتهي في {{ subscription.end_date }}). يرجى
-                            التجديد لتفادي انقطاع صلاحية الدخول.
+                            فقط (ينتهي في {{ subscription.end_date }}).
                         </p>
                     </div>
                 </div>
-
                 <Link
                     href="/member/dashboard/subscriptions"
-                    class="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-black text-xs rounded-xl text-center transition-all shadow-sm shrink-0 cursor-pointer"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-warning-500 px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-warning-600 sm:w-auto"
                 >
-                    تجديد الاشتراك الآن ←
+                    تجديد الاشتراك الآن
                 </Link>
             </div>
 
-            <!-- ترويسة الترحيب وحالة الحساب -->
+            <!-- ============ ترويسة الترحيب ============ -->
             <div
-                class="bg-gradient-to-r from-emerald-500/15 via-slate-900 to-slate-900 p-6 rounded-3xl border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                class="flex flex-col justify-between gap-3 rounded-2xl border border-line-soft bg-surface-elevated p-5 sm:flex-row sm:items-center sm:p-6"
             >
                 <div>
-                    <h2 class="text-lg font-black text-white">
-                        أهلاً بك يا كابتن، {{ member?.name || "اللاعب" }} 👋
+                    <h2
+                        class="text-base font-black text-ink-primary sm:text-lg"
+                    >
+                        أهلاً بك يا كابتن، {{ member?.name || "اللاعب" }}
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">
+                    <p class="mt-0.5 text-xs text-ink-secondary">
                         {{
                             member?.gender === "female"
                                 ? "فترة التدريب: صباحية (سيدات)"
@@ -232,22 +210,22 @@ const requestManualCheckIn = () => {
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-400">حالة الحساب:</span>
+                    <span class="text-[11px] text-ink-muted">حالة الحساب:</span>
                     <span
                         v-if="subscription"
-                        class="text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5"
+                        class="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold"
                         :class="
                             subscription.is_in_grace_period
-                                ? 'text-rose-300 bg-rose-500/10 border-rose-500/20'
-                                : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                                ? 'border-danger-500/30 bg-danger-500/10 text-danger-500'
+                                : 'border-success-500/30 bg-success-500/10 text-success-600 dark:text-success-400'
                         "
                     >
                         <span
-                            class="w-2 h-2 rounded-full animate-pulse"
+                            class="h-1.5 w-1.5 rounded-full"
                             :class="
                                 subscription.is_in_grace_period
-                                    ? 'bg-rose-400'
-                                    : 'bg-emerald-500'
+                                    ? 'bg-danger-500'
+                                    : 'bg-success-500'
                             "
                         ></span>
                         {{
@@ -258,40 +236,40 @@ const requestManualCheckIn = () => {
                     </span>
                     <span
                         v-else
-                        class="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20"
+                        class="rounded-lg border border-warning-500/30 bg-warning-500/10 px-2.5 py-1 text-[11px] font-bold text-warning-600 dark:text-warning-400"
                     >
-                        بانتظار الاشتراك / التفعيل
+                        بانتظار الاشتراك
                     </span>
                 </div>
             </div>
 
-            <!-- تفاصيل البطاقة الرقمية والنشاط -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            <!-- ============ الشبكة الرئيسية ============ -->
+            <div class="grid grid-cols-1 items-start gap-6 md:grid-cols-12">
                 <!-- بطاقة الدخول الرقمية (اليسار) -->
                 <div class="md:col-span-5">
                     <div
-                        class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white rounded-3xl p-6 shadow-2xl border border-slate-700/60 relative overflow-hidden"
+                        class="relative overflow-hidden rounded-3xl border border-line-soft bg-surface-elevated p-5 shadow-sm sm:p-6"
                     >
                         <div
-                            class="flex items-center justify-between border-b border-slate-700/60 pb-4"
+                            class="flex items-center justify-between border-b border-line-soft pb-4"
                         >
                             <div>
                                 <span
-                                    class="text-[11px] font-mono font-bold text-slate-400 block"
+                                    class="block text-[11px] font-mono font-bold text-ink-muted"
                                     >رقم العضوية</span
                                 >
                                 <span
-                                    class="text-base font-mono font-black text-emerald-400 tracking-wider"
+                                    class="text-base font-mono font-black tracking-wider text-brand-600 dark:text-brand-400"
                                 >
                                     {{ member?.member_code || "—" }}
                                 </span>
                             </div>
                             <span
-                                class="px-2.5 py-0.5 rounded-full text-xs font-black"
+                                class="rounded-full px-2.5 py-0.5 text-[10px] font-black border"
                                 :class="
                                     subscription
-                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                        ? 'bg-success-500/10 text-success-600 dark:text-success-400 border-success-500/20'
+                                        : 'bg-warning-500/10 text-warning-600 dark:text-warning-400 border-warning-500/20'
                                 "
                             >
                                 {{
@@ -307,30 +285,33 @@ const requestManualCheckIn = () => {
                             class="my-6 flex flex-col items-center justify-center"
                         >
                             <div
-                                class="p-3 bg-white rounded-2xl shadow-xl border-4 border-slate-700/80"
+                                class="rounded-2xl border border-line-soft bg-white p-3 shadow-sm"
                             >
                                 <canvas
                                     ref="qrCanvas"
-                                    class="rounded-xl block"
+                                    class="block rounded-xl"
                                 ></canvas>
                             </div>
                             <span
-                                class="text-xs text-slate-400 mt-2 font-mono font-bold tracking-widest"
+                                class="mt-2 font-mono text-xs font-bold tracking-widest text-ink-secondary"
                             >
                                 {{ member?.member_code }}
                             </span>
                         </div>
 
-                        <!-- قسم زر الدخول والتنبيه الذكي -->
+                        <!-- أزرار التحكم -->
                         <div
-                            class="mt-4 pt-4 border-t border-slate-800 space-y-3"
+                            class="mt-4 space-y-3 border-t border-line-soft pt-4"
                         >
                             <div v-if="subscription">
                                 <div
                                     v-if="hasCheckedInToday"
-                                    class="w-full py-2.5 px-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2"
+                                    class="flex w-full items-center justify-center gap-2 rounded-xl border border-success-500/30 bg-success-500/10 px-3 py-2.5 text-xs font-bold text-success-600 dark:text-success-400"
                                 >
-                                    <span>✅</span>
+                                    <CheckCircle2
+                                        class="h-4 w-4"
+                                        :stroke-width="2.5"
+                                    />
                                     <span
                                         >تم تسجيل حضورك اليوم بنجاح! نراك غداً
                                         كابتن.</span
@@ -339,10 +320,10 @@ const requestManualCheckIn = () => {
 
                                 <div
                                     v-else-if="hasPendingCheckIn"
-                                    class="w-full py-2 px-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2"
+                                    class="flex w-full items-center justify-center gap-2 rounded-xl border border-warning-500/30 bg-warning-500/10 px-3 py-2.5 text-xs font-bold text-warning-600 dark:text-warning-400"
                                 >
                                     <span
-                                        class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"
+                                        class="h-2 w-2 rounded-full bg-warning-500 animate-pulse"
                                     ></span>
                                     <span
                                         >طلب الدخول بانتظار موافقة
@@ -355,13 +336,18 @@ const requestManualCheckIn = () => {
                                     type="button"
                                     @click="requestManualCheckIn"
                                     :disabled="isRequestingCheckIn"
-                                    class="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-brand-400 disabled:opacity-50"
                                 >
-                                    <span
+                                    <Loader2
                                         v-if="isRequestingCheckIn"
-                                        class="inline-block w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"
-                                    ></span>
-                                    <span v-else>🏋️</span>
+                                        class="h-3.5 w-3.5 animate-spin"
+                                        :stroke-width="2.5"
+                                    />
+                                    <Dumbbell
+                                        v-else
+                                        class="h-4 w-4"
+                                        :stroke-width="2.5"
+                                    />
                                     <span>طلب تسجيل الدخول للتمرين الآن</span>
                                 </button>
                             </div>
@@ -369,27 +355,15 @@ const requestManualCheckIn = () => {
                             <button
                                 type="button"
                                 @click="downloadQR"
-                                class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/40"
+                                class="flex w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface-base px-4 py-2.5 text-xs font-bold text-ink-primary transition hover:bg-glass-bg-hover"
                             >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                    />
-                                </svg>
+                                <Download class="h-4 w-4" :stroke-width="2" />
                                 تنزيل رمز الـ QR للدخول
                             </button>
 
                             <Link
                                 href="/member/dashboard/subscriptions"
-                                class="block w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl font-bold text-xs transition-all text-center"
+                                class="block w-full rounded-xl border border-line-strong bg-surface-base px-4 py-2.5 text-center text-xs font-bold text-ink-primary transition hover:bg-glass-bg-hover"
                             >
                                 {{
                                     subscription
@@ -401,22 +375,25 @@ const requestManualCheckIn = () => {
                     </div>
                 </div>
 
-                <!-- إحصائيات الاشتراك وسجل الحضور (اليمين) -->
-                <div class="md:col-span-7 space-y-6">
-                    <!-- تفاصيل الاشتراك الحالي -->
+                <!-- التفاصيل (اليمين) -->
+                <div class="space-y-6 md:col-span-7">
+                    <!-- تفاصيل الاشتراك -->
                     <div
-                        class="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4"
+                        class="rounded-3xl border border-line-soft bg-surface-elevated p-5 sm:p-6"
                     >
                         <div class="flex items-center justify-between">
                             <h3
-                                class="text-sm font-bold text-white flex items-center gap-2"
+                                class="flex items-center gap-2 text-sm font-bold text-ink-primary"
                             >
-                                <span>📅</span>
+                                <CalendarDays
+                                    class="h-4 w-4 text-brand-500"
+                                    :stroke-width="2"
+                                />
                                 <span>تفاصيل الاشتراك الحالي</span>
                             </h3>
                             <span
                                 v-if="subscription"
-                                class="text-xs font-mono font-bold text-emerald-400"
+                                class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400"
                             >
                                 ينتهي في: {{ subscription.end_date }}
                             </span>
@@ -424,91 +401,105 @@ const requestManualCheckIn = () => {
 
                         <div
                             v-if="subscription"
-                            class="grid grid-cols-2 gap-4 pt-2"
+                            class="mt-4 grid grid-cols-2 gap-4"
                         >
                             <div
-                                class="p-4 rounded-2xl bg-slate-950 border border-slate-800/80"
+                                class="rounded-2xl border border-line-soft bg-surface-base p-4"
                             >
                                 <span
-                                    class="text-[11px] text-slate-400 block mb-1"
+                                    class="block text-[11px] text-ink-muted mb-1"
                                     >الباقة النشطة</span
                                 >
-                                <span class="text-sm font-bold text-white">{{
-                                    subscription.plan_name
-                                }}</span>
+                                <span
+                                    class="text-sm font-bold text-ink-primary"
+                                    >{{ subscription.plan_name }}</span
+                                >
                             </div>
                             <div
-                                class="p-4 rounded-2xl bg-slate-950 border border-slate-800/80"
+                                class="rounded-2xl border border-line-soft bg-surface-base p-4"
                             >
                                 <span
-                                    class="text-[11px] text-slate-400 block mb-1"
+                                    class="block text-[11px] text-ink-muted mb-1"
                                     >الأيام المتبقية</span
                                 >
                                 <span
-                                    class="text-xl font-black text-emerald-400 font-mono"
+                                    class="font-mono text-xl font-black text-brand-600 dark:text-brand-400"
                                 >
                                     {{ remainingDays }} يوم
                                 </span>
                             </div>
+
                             <div
                                 v-if="subscription.is_in_grace_period"
-                                class="col-span-2 flex flex-col gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 sm:flex-row sm:items-center sm:justify-between"
-                                role="status"
-                                aria-live="polite"
+                                class="col-span-2 flex flex-col justify-between gap-2 rounded-2xl border border-danger-500/30 bg-danger-500/10 p-4 sm:flex-row sm:items-center"
                             >
-                                <span class="text-xs font-bold text-rose-200">
-                                    الوقت المتبقي قبل إيقاف الدخول
-                                </span>
+                                <span class="text-xs font-bold text-danger-500"
+                                    >الوقت المتبقي قبل إيقاف الدخول</span
+                                >
                                 <span
                                     v-if="
                                         graceCountdown.isActive &&
                                         !graceCountdown.isComplete
                                     "
-                                    class="font-mono text-lg font-black text-rose-300"
+                                    class="font-mono text-lg font-black text-danger-500"
                                 >
-                                    <span v-if="graceCountdown.days > 0">
-                                        {{ graceCountdown.days }} يوم
+                                    <span v-if="graceCountdown.days > 0"
+                                        >{{ graceCountdown.days }} يوم
                                     </span>
-                                    {{ String(graceCountdown.hours).padStart(2, "0") }}:{{
+                                    {{
+                                        String(graceCountdown.hours).padStart(
+                                            2,
+                                            "0",
+                                        )
+                                    }}:
+                                    {{
                                         String(graceCountdown.minutes).padStart(
                                             2,
                                             "0",
                                         )
-                                    }}:{{ String(graceCountdown.seconds).padStart(2, "0") }}
+                                    }}:
+                                    {{
+                                        String(graceCountdown.seconds).padStart(
+                                            2,
+                                            "0",
+                                        )
+                                    }}
                                 </span>
                                 <span
                                     v-else
-                                    class="text-xs font-bold text-rose-300"
+                                    class="text-xs font-bold text-danger-500"
+                                    >انتهت مهلة السماح.</span
                                 >
-                                    انتهت مهلة السماح؛ حدّث الصفحة لتحديث حالة الاشتراك.
-                                </span>
                             </div>
                         </div>
 
                         <div
                             v-else
-                            class="p-6 text-center rounded-2xl bg-slate-950/50 border border-dashed border-slate-800"
+                            class="mt-4 rounded-2xl border border-dashed border-line-strong bg-surface-base p-6 text-center"
                         >
-                            <p class="text-xs text-slate-400">
+                            <p class="text-xs text-ink-secondary">
                                 ليس لديك باقة تدريب نشطة حالياً
                             </p>
                             <Link
                                 href="/member/dashboard/subscriptions"
-                                class="inline-block mt-3 text-xs font-bold text-emerald-400 hover:underline"
+                                class="mt-3 inline-block text-xs font-bold text-brand-600 hover:underline dark:text-brand-400"
                             >
                                 تصفح الباقات واشترك الآن ←
                             </Link>
                         </div>
                     </div>
 
-                    <!-- آخر حركات الدخول -->
+                    <!-- سجل الحضور -->
                     <div
-                        class="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4"
+                        class="rounded-3xl border border-line-soft bg-surface-elevated p-5 sm:p-6"
                     >
                         <h3
-                            class="text-sm font-bold text-white flex items-center gap-2"
+                            class="mb-4 flex items-center gap-2 text-sm font-bold text-ink-primary"
                         >
-                            <span>⏱️</span>
+                            <History
+                                class="h-4 w-4 text-brand-500"
+                                :stroke-width="2"
+                            />
                             <span>آخر حركات تسجيل الدخول بالصالة</span>
                         </h3>
 
@@ -516,17 +507,17 @@ const requestManualCheckIn = () => {
                             <div
                                 v-for="checkIn in recentCheckIns"
                                 :key="checkIn.id"
-                                class="flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs"
+                                class="flex items-center justify-between rounded-xl border border-line-soft bg-surface-base p-3 text-xs"
                             >
-                                <span class="text-slate-300 font-mono">{{
+                                <span class="font-mono text-ink-secondary">{{
                                     checkIn.created_at
                                 }}</span>
                                 <span
-                                    class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                    class="rounded-full px-2.5 py-0.5 text-[10px] font-bold"
                                     :class="
                                         checkIn.status === 'valid'
-                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                            ? 'bg-success-500/10 text-success-600 dark:text-success-400 border border-success-500/20'
+                                            : 'bg-danger-500/10 text-danger-500 border border-danger-500/20'
                                     "
                                 >
                                     {{
@@ -540,7 +531,7 @@ const requestManualCheckIn = () => {
 
                         <div
                             v-else
-                            class="text-center py-6 text-xs text-slate-500"
+                            class="py-6 text-center text-xs text-ink-muted"
                         >
                             لا توجد حركات تسجيل دخول مسجلة بعد
                         </div>

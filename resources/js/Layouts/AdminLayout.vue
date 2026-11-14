@@ -1,18 +1,23 @@
 <script setup>
-import AdminSidebar from '@/Components/Admin/AdminSidebar.vue';
-import AdminNavbar from '@/Components/Admin/AdminTopNavbar.vue';
+import AdminSidebar from "@/Components/Admin/AdminSidebar.vue";
+import AdminNavbar from "@/Components/Admin/AdminTopNavbar.vue";
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-950 text-slate-100 flex" dir="rtl">
+    <div
+        class="flex min-h-screen bg-surface-base text-ink-primary transition-colors duration-300"
+        dir="rtl"
+    >
         <!-- السايدبار على اليمين -->
         <AdminSidebar />
 
         <!-- المساحة الرئيسية مع الهيدر والمحتوى -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
             <AdminNavbar />
 
-            <main class="flex-1 p-6 sm:p-8 overflow-y-auto">
+            <main
+                class="flex-1 overflow-y-auto bg-surface-base p-4 sm:p-6 lg:p-8"
+            >
                 <slot />
             </main>
         </div>

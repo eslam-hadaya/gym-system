@@ -1,85 +1,125 @@
 <script setup>
-import { computed } from 'vue';
-import { usePage, router } from '@inertiajs/vue3';
+import { computed } from "vue";
+import { usePage, router } from "@inertiajs/vue3";
+import { Menu, Zap, ShieldCheck, LogOut, Activity } from "@lucide/vue";
 
-defineEmits(['toggleSidebar']);
+defineEmits(["toggleSidebar"]);
 
 const page = usePage();
 
 const user = computed(() => {
-    return page.props.auth?.user || {
-        name: 'المسؤول',
-        email: 'admin@gym.sy',
-    };
+    return (
+        page.props.auth?.user || {
+            name: "المسؤول",
+            email: "admin@gym.sy",
+        }
+    );
 });
 
-const todayDate = new Intl.DateTimeFormat('ar-SY', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+const todayDate = new Intl.DateTimeFormat("ar-SY", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
 }).format(new Date());
 
 const handleLogout = () => {
-    router.post('/logout');
+    router.post("/logout");
 };
 </script>
 
 <template>
-    <header class="h-20 bg-slate-900/70 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-30 px-6 sm:px-8 flex items-center justify-between" dir="rtl">
-        <!-- الجهة اليمنى: زر السايدبار وتاريخ الوردية -->
-        <div class="flex items-center gap-4">
+    <header
+        dir="rtl"
+        class="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-line-soft bg-surface-base/80 px-3 backdrop-blur-glass transition-colors duration-300 sm:h-20 sm:px-6"
+    >
+        <!-- ============ الجهة اليمنى: زر السايدبار وتاريخ الوردية ============ -->
+        <div class="flex items-center gap-3 sm:gap-4">
             <button
                 type="button"
                 @click="$emit('toggleSidebar')"
-                class="md:hidden p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
-                title="القائمة"
+                aria-label="فتح القائمة"
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-line-strong text-ink-secondary transition-colors hover:bg-glass-bg-hover hover:text-ink-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 md:hidden"
             >
-                <span class="text-lg">☰</span>
+                <Menu class="h-5 w-5" :stroke-width="2" />
             </button>
 
-            <div class="hidden sm:flex flex-col">
-                <span class="text-xs font-bold text-white">{{ todayDate }}</span>
-                <span class="text-[10px] text-slate-400 font-mono">الوردية الحالية: استقبال وتسجيل</span>
+            <div class="hidden flex-col sm:flex">
+                <span class="text-xs font-bold text-ink-primary">{{
+                    todayDate
+                }}</span>
+                <span class="text-[10px] font-medium text-ink-muted">
+                    الوردية الحالية: استقبال وتسجيل
+                </span>
             </div>
         </div>
 
-        <!-- الجهة اليسرى: المؤشرات التشغيلية للمنظومة وهوية المدير -->
-        <div class="flex items-center gap-3 sm:gap-4">
-            <!-- مؤشر جاهزية قارئ الباب -->
-            <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-slate-400">ماسح الـ QR:</span>
-                <span class="text-emerald-400 font-bold font-mono">متصل ومتاح</span>
+        <!-- ============ الجهة اليسرى: المؤشرات التشغيلية وهوية المدير ============ -->
+        <div class="flex items-center gap-2 sm:gap-4">
+            <!-- مؤشر جاهزية قارئ الباب (ديسكتوب) -->
+            <div
+                class="hidden items-center gap-2 rounded-xl border border-line-strong bg-glass-bg px-3 py-1.5 text-xs lg:flex"
+            >
+                <span class="relative flex h-2 w-2 shrink-0">
+                    <span
+                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-400 opacity-75"
+                    ></span>
+                    <span
+                        class="relative inline-flex h-2 w-2 rounded-full bg-success-500"
+                    ></span>
+                </span>
+                <span class="text-ink-secondary">ماسح الـ QR:</span>
+                <span
+                    class="font-mono text-[11px] font-bold text-success-600 dark:text-success-400"
+                >
+                    متصل ومتاح
+                </span>
             </div>
 
-            <!-- مؤشر السيرفر وقاعدة البيانات -->
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-400">
-                <span>⚡</span>
+            <!-- مؤشر السيرفر -->
+            <div
+                class="flex items-center gap-1.5 rounded-xl border border-brand-500/20 bg-brand-500/10 px-2.5 py-1.5 text-xs font-medium text-brand-600 dark:text-brand-400 sm:gap-2 sm:px-3"
+            >
+                <Zap class="h-3.5 w-3.5" :stroke-width="2" />
                 <span class="hidden sm:inline">السيرفر:</span>
-                <span class="font-mono text-[11px]">Neon DB</span>
+                <span class="font-mono text-[11px]">Online</span>
             </div>
 
-            <!-- اسم المدير في الوردية -->
-            <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
-                <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-amber-400 font-bold">
-                    {{ user.name?.charAt(0) || '🛡️' }}
+            <!-- اسم المدير -->
+            <div
+                class="flex items-center gap-2.5 border-r border-line-soft pr-2.5 sm:pr-3.5"
+            >
+                <div
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-line-strong bg-glass-bg text-xs font-bold text-brand-600 dark:text-brand-400"
+                >
+                    <ShieldCheck
+                        v-if="!user.name"
+                        class="h-4 w-4"
+                        :stroke-width="2"
+                    />
+                    <span v-else>{{ user.name?.charAt(0) }}</span>
                 </div>
-                <div class="hidden md:block text-right">
-                    <p class="text-xs font-bold text-white leading-tight truncate max-w-[120px]">{{ user.name }}</p>
-                    <p class="text-[10px] text-slate-400 leading-tight">صلاحية إدارية كاملة</p>
+                <div class="hidden text-right md:block">
+                    <p
+                        class="max-w-[120px] truncate text-xs font-bold leading-tight text-ink-primary"
+                    >
+                        {{ user.name }}
+                    </p>
+                    <p class="text-[10px] leading-tight text-ink-muted">
+                        صلاحية إدارية كاملة
+                    </p>
                 </div>
             </div>
 
-            <!-- زر خروج سريع من الهيدر -->
+            <!-- زر تسجيل الخروج -->
             <button
                 type="button"
                 @click="handleLogout"
-                class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                title="تسجيل الخروج"
+                aria-label="تسجيل الخروج"
+                class="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-ink-muted transition-colors hover:bg-danger-500/10 hover:text-danger-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-400 sm:px-3"
             >
-                <span>🚪</span>
-                <span class="hidden sm:inline">خروج</span>
+                <LogOut class="h-4 w-4 shrink-0" :stroke-width="2" />
+                <span class="hidden text-xs font-bold sm:inline">خروج</span>
             </button>
         </div>
     </header>

@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import QRCode from 'qrcode';
+import { ref, onMounted, watch } from "vue";
+import QRCode from "qrcode";
 
 const props = defineProps({
     memberCode: {
@@ -13,11 +13,11 @@ const props = defineProps({
     },
     planName: {
         type: String,
-        default: 'لا يوجد اشتراك نشط',
+        default: "لا يوجد اشتراك نشط",
     },
     status: {
         type: String,
-        default: 'pending',
+        default: "pending",
     },
 });
 
@@ -32,12 +32,12 @@ const generateQr = async () => {
             width: 220,
             margin: 1,
             color: {
-                dark: '#020617',
-                light: '#ffffff',
+                dark: "#020617",
+                light: "#ffffff",
             },
         });
     } catch (err) {
-        console.error('QR Render Error:', err);
+        console.error("QR Render Error:", err);
     }
 };
 
@@ -45,8 +45,8 @@ const downloadCard = async () => {
     isGenerating.value = true;
 
     try {
-        const offscreenCanvas = document.createElement('canvas');
-        const ctx = offscreenCanvas.getContext('2d');
+        const offscreenCanvas = document.createElement("canvas");
+        const ctx = offscreenCanvas.getContext("2d");
         const width = 800;
         const height = 1100;
 
@@ -55,45 +55,45 @@ const downloadCard = async () => {
 
         // Background Gradient
         const grad = ctx.createLinearGradient(0, 0, width, height);
-        grad.addColorStop(0, '#090d16');
-        grad.addColorStop(1, '#020617');
+        grad.addColorStop(0, "#090d16");
+        grad.addColorStop(1, "#020617");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height);
 
         // Border Glow
         ctx.lineWidth = 12;
-        ctx.strokeStyle = '#f59e0b';
+        ctx.strokeStyle = "#f59e0b";
         ctx.strokeRect(30, 30, width - 60, height - 60);
 
         // Header Title
-        ctx.fillStyle = '#f59e0b';
-        ctx.font = 'bold 44px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('نادي الأبطال الرياضي', width / 2, 120);
+        ctx.fillStyle = "#f59e0b";
+        ctx.font = "bold 44px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("نادي الأبطال الرياضي", width / 2, 120);
 
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '22px sans-serif';
-        ctx.fillText('بطاقة الدخول الإلكترونية المعتمدة', width / 2, 165);
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "22px sans-serif";
+        ctx.fillText("بطاقة الدخول الإلكترونية المعتمدة", width / 2, 165);
 
         // Member Info Box
-        ctx.fillStyle = '#0f172a';
+        ctx.fillStyle = "#0f172a";
         ctx.beginPath();
         ctx.roundRect(80, 210, width - 160, 160, 24);
         ctx.fill();
-        ctx.strokeStyle = '#1e293b';
+        ctx.strokeStyle = "#1e293b";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 36px sans-serif';
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 36px sans-serif";
         ctx.fillText(props.memberName, width / 2, 275);
 
-        ctx.fillStyle = '#f59e0b';
-        ctx.font = 'bold 24px monospace';
+        ctx.fillStyle = "#f59e0b";
+        ctx.font = "bold 24px monospace";
         ctx.fillText(props.memberCode, width / 2, 325);
 
         // QR Code Container
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = "#ffffff";
         ctx.beginPath();
         ctx.roundRect(160, 420, 480, 480, 32);
         ctx.fill();
@@ -104,8 +104,8 @@ const downloadCard = async () => {
             width: 420,
             margin: 1,
             color: {
-                dark: '#020617',
-                light: '#ffffff',
+                dark: "#020617",
+                light: "#ffffff",
             },
         });
 
@@ -118,24 +118,28 @@ const downloadCard = async () => {
         });
 
         // Plan Badge
-        ctx.fillStyle = '#0f172a';
+        ctx.fillStyle = "#0f172a";
         ctx.beginPath();
         ctx.roundRect(140, 930, width - 280, 60, 16);
         ctx.fill();
 
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "bold 22px sans-serif";
         ctx.fillText(`الباقة: ${props.planName}`, width / 2, 968);
 
         // Footer Note
-        ctx.fillStyle = '#64748b';
-        ctx.font = '18px sans-serif';
-        ctx.fillText('أبرز هذا الرمز عند البوابة الإلكترونية لتسجيل الحضور', width / 2, 1035);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "18px sans-serif";
+        ctx.fillText(
+            "أبرز هذا الرمز عند البوابة الإلكترونية لتسجيل الحضور",
+            width / 2,
+            1035,
+        );
 
         // Export as PNG
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.download = `GYM-PASS-${props.memberCode}.png`;
-        link.href = offscreenCanvas.toDataURL('image/png');
+        link.href = offscreenCanvas.toDataURL("image/png");
         link.click();
     } finally {
         isGenerating.value = false;
@@ -146,47 +150,120 @@ onMounted(() => {
     generateQr();
 });
 
-watch(() => props.memberCode, () => {
-    generateQr();
-});
+watch(
+    () => props.memberCode,
+    () => {
+        generateQr();
+    },
+);
 </script>
 
 <template>
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div
+        class="relative flex flex-col items-center overflow-hidden rounded-3xl border border-line-soft bg-surface-elevated p-6 text-center shadow-sm transition-colors duration-300 sm:p-8"
+    >
+        <!-- توهج خفيف في الخلفية -->
+        <div
+            aria-hidden="true"
+            class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-brand-500/10 blur-[60px]"
+        ></div>
 
-        <div class="w-full flex items-center justify-between pb-4 border-b border-slate-800">
+        <!-- ============ الرأس: الكود والحالة ============ -->
+        <div
+            class="relative z-10 flex w-full items-center justify-between border-b border-line-soft pb-4"
+        >
             <div class="text-right">
-                <span class="text-[10px] text-slate-400 font-semibold block">كود العضوية</span>
-                <span class="font-mono text-sm font-black text-amber-400">{{ memberCode }}</span>
+                <span class="block text-[10px] font-semibold text-ink-muted"
+                    >كود العضوية</span
+                >
+                <span
+                    class="font-mono text-sm font-black text-brand-600 dark:text-brand-400"
+                    dir="ltr"
+                >
+                    {{ memberCode }}
+                </span>
             </div>
             <div
-                class="px-3 py-1 rounded-full text-[11px] font-bold border"
-                :class="status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'"
+                class="rounded-full border px-3 py-1 text-[11px] font-bold"
+                :class="
+                    status === 'active'
+                        ? 'border-success-500/30 bg-success-500/10 text-success-600 dark:text-success-400'
+                        : 'border-warning-500/30 bg-warning-500/10 text-warning-600 dark:text-warning-400'
+                "
             >
-                {{ status === 'active' ? 'مشترك نشط' : 'بانتظار التفعيل' }}
+                {{ status === "active" ? "مشترك نشط" : "بانتظار التفعيل" }}
             </div>
         </div>
 
-        <div class="my-6 p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center">
-            <canvas ref="qrCanvas" class="max-w-full h-auto"></canvas>
+        <!-- ============ رمز الـ QR ============ -->
+        <!-- ملاحظة: تم إبقاء الخلفية بيضاء هنا عشان رمز الـ QR يبقى مقروءاً دائماً -->
+        <div
+            class="relative z-10 my-6 flex items-center justify-center rounded-2xl bg-white p-4 shadow-md ring-1 ring-black/5"
+        >
+            <canvas ref="qrCanvas" class="h-auto max-w-full"></canvas>
         </div>
 
-        <div class="space-y-1 mb-6">
-            <h3 class="text-base font-bold text-white">{{ memberName }}</h3>
-            <p class="text-xs text-slate-400">{{ planName }}</p>
+        <!-- ============ معلومات المشترك ============ -->
+        <div class="relative z-10 mb-6 space-y-1">
+            <h3 class="text-base font-bold text-ink-primary">
+                {{ memberName }}
+            </h3>
+            <p class="text-xs text-ink-secondary">{{ planName }}</p>
         </div>
 
+        <!-- ============ زر التحميل ============ -->
         <button
             type="button"
             @click="downloadCard"
             :disabled="isGenerating"
-            class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 cursor-pointer"
+            class="relative z-10 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-xs font-bold text-white shadow-glow transition-colors duration-200 hover:bg-brand-400 active:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base"
         >
-            <span v-if="isGenerating" class="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
-            <span v-else>💾</span>
-            <span>تحميل بطاقة الدخول (PNG)</span>
+            <template v-if="isGenerating">
+                <svg
+                    class="h-4 w-4 animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                    ></circle>
+                    <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                </svg>
+                جاري التحميل...
+            </template>
+            <template v-else>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                </svg>
+                تحميل بطاقة الدخول (PNG)
+            </template>
         </button>
-        <p class="text-[10px] text-slate-500 mt-2">احفظ البطاقة على جهازك لفتحها عند الباب دون الحاجة لاتصال إنترنت</p>
+
+        <p
+            class="relative z-10 mt-3 text-[10px] leading-relaxed text-ink-muted"
+        >
+            احفظ البطاقة على جهازك لفتحها عند الباب دون الحاجة لاتصال إنترنت
+        </p>
     </div>
 </template>

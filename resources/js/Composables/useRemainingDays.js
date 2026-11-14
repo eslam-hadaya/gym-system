@@ -1,76 +1,78 @@
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 
-const getDamascusDate = () => {
-    const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: "Asia/Damascus",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(new Date());
-    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+export function useRemainingDays(subscription) {
+    const remainingDays = computed(() => {
+        if (!subscription.value || !subscription.value.end_date) return 0;
 
-    return `${values.year}-${values.month}-${values.day}`;
-};
-
-export function useRemainingDays(getEndDate) {
-    const today = ref(getDamascusDate());
-    let intervalId;
-
-    onMounted(() => {
-        intervalId = window.setInterval(() => {
-            today.value = getDamascusDate();
-        }, 60_000);
-    });
-
-    onUnmounted(() => {
-        window.clearInterval(intervalId);
-    });
-
-    return computed(() => {
-        const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(getEndDate() || "");
-
-        if (!match) {
-            return 0;
-        }
-
-        const [, year, month, day] = match.map(Number);
-        const endDate = Date.UTC(year, month - 1, day);
-        const currentDate = Date.UTC(
-            ...today.value.split("-").map(Number),
+        const end = new Date(subscription.value.end_date).setHours(
+            23,
+            59,
+            59,
+            999,
         );
+        const now = new Date().getTime();
+        const diff = end - now;
 
-        return Math.max(0, (endDate - currentDate) / 86_400_000);
+        if (diff <= 0) return 0;
+        return Math.ceil(diff / (1000 * 60 * 60 * 24));
     });
+
+    const isExpiringSoon = computed(() => {
+        return remainingDays.value > 0 && remainingDays.value <= 5;
+    });
+
+    const isExpired = computed(() => {
+        return remainingDays.value === 0;
+    });
+
+    return {
+        remainingDays,
+        isExpiringSoon,
+        isExpired,
+    };
 }
 
-export function useCountdown(getDeadline) {
-    const currentTime = ref(Date.now());
-    let intervalId;
+// الدالة المطلوبة من Index.vue
+export function useCountdown(targetDate) {
+    const days = ref(0);
+    const hours = ref(0);
+    const minutes = ref(0);
+    const seconds = ref(0);
+    let timer = null;
+
+    const calculate = () => {
+        // في حال كانت القيمة المرسلة هي مرجع (ref) أو تاريخ مباشر
+        const dateVal =
+            targetDate.value !== undefined ? targetDate.value : targetDate;
+        if (!dateVal) return;
+
+        const end = new Date(dateVal).getTime();
+        const now = new Date().getTime();
+        const diff = end - now;
+
+        if (diff <= 0) {
+            days.value = 0;
+            hours.value = 0;
+            minutes.value = 0;
+            seconds.value = 0;
+            if (timer) clearInterval(timer);
+            return;
+        }
+
+        days.value = Math.floor(diff / (1000 * 60 * 60 * 24));
+        hours.value = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        minutes.value = Math.floor((diff / 1000 / 60) % 60);
+        seconds.value = Math.floor((diff / 1000) % 60);
+    };
 
     onMounted(() => {
-        intervalId = window.setInterval(() => {
-            currentTime.value = Date.now();
-        }, 1000);
+        calculate();
+        timer = setInterval(calculate, 1000);
     });
 
     onUnmounted(() => {
-        window.clearInterval(intervalId);
+        if (timer) clearInterval(timer);
     });
 
-    return computed(() => {
-        const deadline = getDeadline();
-        const deadlineTime = deadline ? Date.parse(deadline) : Number.NaN;
-        const totalSeconds = Number.isFinite(deadlineTime)
-            ? Math.max(0, Math.ceil((deadlineTime - currentTime.value) / 1000))
-            : 0;
-
-        return {
-            isActive: Number.isFinite(deadlineTime),
-            isComplete: Number.isFinite(deadlineTime) && totalSeconds === 0,
-            days: Math.floor(totalSeconds / 86_400),
-            hours: Math.floor((totalSeconds % 86_400) / 3_600),
-            minutes: Math.floor((totalSeconds % 3_600) / 60),
-            seconds: totalSeconds % 60,
-        };
-    });
+    return { days, hours, minutes, seconds };
 }

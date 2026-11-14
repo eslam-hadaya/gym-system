@@ -1,0 +1,49 @@
+/* ============================================================
+   Design Tokens — ملف الألوان والثيم المركزي
+   غيّر القيم هون فقط، وكل المشروع رح يتأثر تلقائياً.
+   ============================================================ */
+
+:root {
+    /* ---------- Brand (اللون المركزي) ---------- */
+    --brand-50: #fffaf0;
+    --brand-100: #fdf0d5;
+    --brand-200: #f8dca6;
+    --brand-300: #f2c274;
+    --brand-400: #e9a343;
+    --brand-500: #d98a1f; /* ← اللون الأساسي */
+    --brand-600: #b96f14;
+    --brand-700: #94550f;
+    --brand-800: #6e3e0c;
+    --brand-900: #4a2908;
+
+    /* ---------- Neutral (خلفيات ونصوص) ---------- */
+    --bg-base: #0b0f14;
+    --bg-elevated: #11161d;
+    --bg-soft: #171d25;
+
+    --text-primary: #f5f7fa;
+    --text-secondary: #a7b0bb;
+    --text-muted: #6b7683;
+
+    --border-soft: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.12);
+
+    /* ---------- Glass ---------- */
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-bg-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-blur: 14px;
+
+    /* ---------- Shadows / Glow ---------- */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.45);
+    --shadow-glow-brand: 0 12px 40px -12px
+        color-mix(in oklab, var(--brand-500) 55%, transparent);
+
+    /* ---------- Radius ---------- */
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --radius-pill: 999px;
+}

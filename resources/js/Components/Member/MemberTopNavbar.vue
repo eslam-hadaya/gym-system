@@ -1,22 +1,21 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { usePage, router } from "@inertiajs/vue3";
+import { Menu, LogOut, RefreshCw, Loader2, QrCode } from "@lucide/vue";
+// استدعاء مسار ThemeToggle الصحيح بناءً على صورتك:
+import ThemeToggle from "@/Components/ThemeToggle.vue";
 
 defineEmits(["toggleSidebar"]);
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user || { name: "اللاعب" });
-
 const member = computed(() => page.props.member || null);
 const subscription = computed(
     () => page.props.subscription || page.props.currentSubscription || null,
 );
 
-// قراءة الحالة الدقيقة: إما من حالة الاشتراك الأخير أو حالة العضو
 const status = computed(() => {
-    if (subscription.value?.status) {
-        return subscription.value.status;
-    }
+    if (subscription.value?.status) return subscription.value.status;
     return member.value?.status || "pending";
 });
 
@@ -28,98 +27,148 @@ const todayDate = new Intl.DateTimeFormat("ar-SY", {
     month: "long",
 }).format(new Date());
 
+const statusConfig = computed(() => {
+    const s = status.value;
+    if (s === "active" || s === "verified") {
+        return {
+            label: "اشتراكك سارٍ",
+            short: "سارٍ",
+            classes:
+                "bg-success-500/10 border-success-500/30 text-success-600 dark:text-success-400",
+        };
+    }
+    if (s === "rejected" || s === "cancelled") {
+        return {
+            label: "تم رفض الطلب",
+            short: "مرفوض",
+            classes: "bg-danger-500/10 border-danger-500/30 text-danger-500",
+        };
+    }
+    if (s === "pending") {
+        return {
+            label: "بانتظار الاعتماد",
+            short: "معلّق",
+            classes:
+                "bg-warning-500/10 border-warning-500/30 text-warning-600 dark:text-warning-400",
+        };
+    }
+    return {
+        label: "غير مشترك",
+        short: "منتهٍ",
+        classes: "bg-glass-bg border-line-strong text-ink-muted",
+    };
+});
+
+const isLoggingOut = ref(false);
+const isRefreshing = ref(false);
+
 const handleLogout = () => {
-    router.post("/logout");
+    if (!confirm("هل تريد تسجيل الخروج من حسابك؟")) return;
+    isLoggingOut.value = true;
+    router.post(
+        "/logout",
+        {},
+        {
+            onFinish: () => {
+                isLoggingOut.value = false;
+            },
+        },
+    );
+};
+
+const refreshStatus = () => {
+    isRefreshing.value = true;
+    router.reload({
+        only: ["member", "subscription", "currentSubscription"],
+        onFinish: () => {
+            isRefreshing.value = false;
+        },
+    });
 };
 </script>
 
 <template>
     <header
-        class="h-20 bg-slate-900/70 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-30 px-6 sm:px-8 flex items-center justify-between select-none"
         dir="rtl"
+        class="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-line-soft bg-surface-base/80 px-3 backdrop-blur-glass transition-colors duration-300 sm:h-20 sm:px-6"
     >
-        <!-- الجهة اليمنى: زر القائمة للشاشات الصغيرة والترحيب والتاريخ -->
-        <div class="flex items-center gap-4">
+        <!-- اليمين: زر القائمة + الترحيب -->
+        <div class="flex min-w-0 items-center gap-2 sm:gap-4">
             <button
-                type="button"
                 @click="$emit('toggleSidebar')"
-                class="md:hidden p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer"
-                title="القائمة"
+                aria-label="فتح القائمة"
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-line-strong text-ink-secondary transition-colors hover:bg-glass-bg-hover hover:text-ink-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 md:hidden"
             >
-                <span class="text-lg">☰</span>
+                <Menu class="h-5 w-5" :stroke-width="2" />
             </button>
 
-            <div class="flex flex-col">
-                <span class="text-xs font-bold text-white"
-                    >أهلاً بك، {{ user.name }} 👋</span
+            <div class="min-w-0">
+                <p
+                    class="truncate text-xs font-bold text-ink-primary sm:text-sm"
                 >
-                <span class="text-[10px] text-slate-400">{{ todayDate }}</span>
+                    أهلاً، {{ user.name }}
+                </p>
+                <p class="truncate text-[10px] text-ink-muted sm:text-[11px]">
+                    {{ todayDate }}
+                </p>
             </div>
         </div>
 
-        <!-- الجهة اليسرى: حالة الاشتراك، رقم العضوية، وزر الخروج -->
-        <div class="flex items-center gap-3">
-            <!-- 1. حالة: اشتراك نشط وسارٍ -->
+        <!-- اليسار: الحالة + الكود + الإجراءات -->
+        <div class="flex items-center gap-1.5 sm:gap-3">
+            <!-- كود العضوية -->
             <div
-                v-if="status === 'active' || status === 'verified'"
-                class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-bold"
+                class="hidden items-center gap-1.5 rounded-xl border border-line-strong bg-glass-bg px-2.5 py-1.5 sm:flex"
             >
+                <QrCode class="h-3.5 w-3.5 text-ink-muted" :stroke-width="2" />
                 <span
-                    class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"
-                ></span>
-                <span class="hidden sm:inline">اشتراكك سارٍ</span>
-                <span class="sm:hidden">سارٍ</span>
+                    class="font-mono text-[11px] font-bold text-brand-600 dark:text-brand-400"
+                    dir="ltr"
+                >
+                    {{ memberCode }}
+                </span>
             </div>
 
-            <!-- 2. حالة: تم رفض الطلب من الإدارة أو ملغى -->
+            <!-- حالة الاشتراك -->
             <div
-                v-else-if="status === 'rejected' || status === 'cancelled'"
-                class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-400 font-bold"
+                class="inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs font-bold sm:px-3"
+                :class="statusConfig.classes"
             >
-                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                <span class="hidden sm:inline">تم رفض الطلب / ملغى</span>
-                <span class="sm:hidden">مرفوض</span>
+                <span class="hidden sm:inline">{{ statusConfig.label }}</span>
+                <span class="sm:hidden">{{ statusConfig.short }}</span>
             </div>
 
-            <!-- 3. حالة: قيد التدقيق والمراجعة -->
-            <div
-                v-else-if="status === 'pending'"
-                class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 font-bold"
-            >
-                <span
-                    class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"
-                ></span>
-                <span class="hidden sm:inline">بانتظار الاعتماد</span>
-                <span class="sm:hidden">معلق</span>
-            </div>
-
-            <!-- 4. حالة: منتهٍ أو غير مشترك بعد -->
-            <div
-                v-else
-                class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-400 font-bold"
-            >
-                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
-                <span class="hidden sm:inline">غير مشترك</span>
-                <span class="sm:hidden">منتهٍ</span>
-            </div>
-
-            <!-- بطاقة كود اللاعب السريع -->
-            <div
-                class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-amber-400 font-bold"
-            >
-                <span class="text-slate-500 text-[10px]">ID:</span>
-                <span>{{ memberCode }}</span>
-            </div>
-
-            <!-- زر تسجيل الخروج السريع -->
+            <!-- إعادة التحديث -->
             <button
-                type="button"
-                @click="handleLogout"
-                class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                title="تسجيل الخروج"
+                @click="refreshStatus"
+                :disabled="isRefreshing"
+                aria-label="تحديث الحالة"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-glass-bg-hover hover:text-ink-primary disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
             >
-                <span>🚪</span>
-                <span class="hidden sm:inline">خروج</span>
+                <RefreshCw
+                    class="h-4 w-4"
+                    :class="{ 'animate-spin': isRefreshing }"
+                    :stroke-width="2"
+                />
+            </button>
+
+            <!-- تبديل الوضع -->
+            <ThemeToggle />
+
+            <!-- تسجيل الخروج -->
+            <button
+                @click="handleLogout"
+                :disabled="isLoggingOut"
+                aria-label="تسجيل الخروج"
+                class="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-ink-muted transition-colors hover:bg-danger-500/10 hover:text-danger-500 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-400"
+            >
+                <Loader2
+                    v-if="isLoggingOut"
+                    class="h-4 w-4 animate-spin"
+                    :stroke-width="2.5"
+                />
+                <LogOut v-else class="h-4 w-4" :stroke-width="2" />
+                <span class="hidden text-xs font-bold sm:inline">خروج</span>
             </button>
         </div>
     </header>

@@ -1,1 +1,139 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+/* ============================================================
+   Tailwind v4 — Design Tokens
+   الألوان الثابتة (brand) + الألوان اللي تتغيّر مع الوضع
+   ============================================================ */
+
+@theme {
+    /* ===== Brand (ثابت في الوضعين) ===== */
+    --color-brand-50: #fef9ec;
+    --color-brand-100: #fcefc7;
+    --color-brand-200: #f8dd8a;
+    --color-brand-300: #f2c453;
+    --color-brand-400: #e9a82e;
+    --color-brand-500: #d98a1f;
+    --color-brand-600: #b96f14;
+    --color-brand-700: #94550f;
+    --color-brand-800: #6e3e0c;
+    --color-brand-900: #4a2908;
+    --color-danger-500: #ef4444; /* red-500 */
+    --color-danger-400: #f87171; /* red-400 */
+    --color-danger-600: #dc2626;
+    --color-success-400: #4ade80;
+    --color-success-500: #22c55e;
+    --color-success-600: #16a34a;
+    --color-warning-400: #facc15;
+    --color-warning-500: #eab308;
+    /* ===== Radius ===== */
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+
+    /* ===== Blur ===== */
+    --blur-glass: 14px;
+}
+
+/* ============================================================
+   الألوان اللي تتغيّر مع الوضع — inline theme
+   ============================================================ */
+@theme inline {
+    --color-surface-base: var(--surface-base);
+    --color-surface-elevated: var(--surface-elevated);
+    --color-surface-soft: var(--surface-soft);
+
+    --color-ink-primary: var(--ink-primary);
+    --color-ink-secondary: var(--ink-secondary);
+    --color-ink-muted: var(--ink-muted);
+
+    --color-line-soft: var(--line-soft);
+    --color-line-strong: var(--line-strong);
+
+    --color-glass-bg: var(--glass-bg);
+    --color-glass-bg-hover: var(--glass-bg-hover);
+    --color-glass-border: var(--glass-border);
+
+    --shadow-glow: var(--shadow-glow);
+}
+
+/* ============================================================
+   الوضع النهاري (الافتراضي)
+   ============================================================ */
+:root {
+    --surface-base: #ffffff;
+    --surface-elevated: #f8fafc;
+    --surface-soft: #f1f5f9;
+
+    --ink-primary: #0f172a;
+    --ink-secondary: #475569;
+    --ink-muted: #94a3b8;
+
+    --line-soft: rgba(15, 23, 42, 0.06);
+    --line-strong: rgba(15, 23, 42, 0.12);
+
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-bg-hover: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(15, 23, 42, 0.08);
+
+    --shadow-glow: 0 12px 40px -12px
+        color-mix(in oklab, #d98a1f 40%, transparent);
+
+    color-scheme: light;
+}
+
+/* ============================================================
+   الوضع الليلي
+   ============================================================ */
+.dark {
+    --surface-base: #0b0f14;
+    --surface-elevated: #11161d;
+    --surface-soft: #171d25;
+
+    --ink-primary: #f5f7fa;
+    --ink-secondary: #a7b0bb;
+    --ink-muted: #6b7683;
+
+    --line-soft: rgba(255, 255, 255, 0.06);
+    --line-strong: rgba(255, 255, 255, 0.12);
+
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-bg-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    --shadow-glow: 0 12px 40px -12px
+        color-mix(in oklab, #d98a1f 55%, transparent);
+
+    color-scheme: dark;
+}
+
+/* ============================================================
+   Base styles
+   ============================================================ */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--surface-base);
+    color: var(--ink-primary);
+    font-family:
+        "Cairo",
+        system-ui,
+        -apple-system,
+        sans-serif;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
+}
+
+/* احترام تفضيل تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

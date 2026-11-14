@@ -1,121 +1,153 @@
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Link, usePage } from "@inertiajs/vue3";
+import { computed } from "vue";
+import {
+    QrCode,
+    CreditCard,
+    History,
+    LogOut,
+    Dumbbell,
+    User,
+} from "@lucide/vue";
 
 const page = usePage();
 
-const user = computed(() => page.props.auth?.user || { name: 'اللاعب' });
+const user = computed(() => page.props.auth?.user || { name: "اللاعب" });
 const member = computed(() => page.props.member || null);
 
 const currentUrl = computed(() => page.url);
+
 const isActive = (url) => {
-    if (url === '/member/dashboard') {
-        return currentUrl.value === '/member/dashboard';
+    if (url === "/member/dashboard") {
+        return currentUrl.value === "/member/dashboard";
     }
     return currentUrl.value.startsWith(url);
 };
 
 const navItems = [
+    { name: "بطاقتي الرقمية (QR)", url: "/member/dashboard", icon: QrCode },
     {
-        name: 'بطاقتي الرقمية (QR)',
-        url: '/member/dashboard',
-        icon: '📱',
-        badge: 'الكود',
+        name: "اشتراكي والتجديد",
+        url: "/member/dashboard/subscriptions",
+        icon: CreditCard,
     },
     {
-        name: 'اشتراكي والتجديد',
-        url: '/member/dashboard/subscriptions',
-        icon: '💳',
-        badge: null,
-    },
-    {
-        name: 'سجل حركات الحضور',
-        url: '/member/dashboard/history',
-        icon: '🕒',
-        badge: null,
+        name: "سجل حركات الحضور",
+        url: "/member/dashboard/history",
+        icon: History,
     },
 ];
+
+const userInitial = computed(() => {
+    const name = user.value?.name?.trim() || "لاعب";
+    return name.charAt(0).toUpperCase();
+});
 </script>
 
 <template>
-    <!-- سايدبار مثبت على جهة اليمين في بيئة RTL -->
-    <aside class="w-64 bg-slate-900/95 border-l border-slate-800 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none" dir="rtl">
+    <aside
+        dir="rtl"
+        class="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between border-l border-line-soft bg-surface-elevated transition-colors duration-300"
+    >
+        <!-- ============ العلوي: الشعار والروابط ============ -->
         <div>
-            <!-- ترويسة السايدبار والشعار -->
-            <div class="h-20 flex items-center gap-3 px-6 border-b border-slate-800/80">
-                <span class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-                    🏋️
+            <!-- الشعار -->
+            <Link
+                href="/"
+                class="flex h-16 items-center gap-3 border-b border-line-soft px-4 sm:h-20 sm:px-5"
+                aria-label="نادي الأبطال — الرئيسية"
+            >
+                <span
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white shadow-glow"
+                >
+                    <Dumbbell class="h-5 w-5" :stroke-width="2.2" />
                 </span>
-                <div class="overflow-hidden">
-                    <h2 class="text-sm font-black text-white tracking-wide truncate">نادي الأبطال</h2>
-                    <span class="text-[10px] text-amber-400/90 font-mono font-medium block">
+                <div class="min-w-0">
+                    <h2
+                        class="truncate text-sm font-black text-ink-primary sm:text-base"
+                    >
+                        نادي الأبطال
+                    </h2>
+                    <span
+                        class="block truncate text-[10px] font-medium text-brand-600 dark:text-brand-400"
+                    >
                         بوابة اللاعب الرياضي
                     </span>
                 </div>
-            </div>
+            </Link>
 
-            <!-- قائمة التبويبات -->
-            <nav class="p-4 space-y-1.5 text-xs font-semibold">
-                <div class="text-[10px] font-bold text-slate-500 px-3 py-2 uppercase tracking-wider">
-                    حسابي والخدمات
-                </div>
-
-                <Link
-                    v-for="item in navItems"
-                    :key="item.url"
-                    :href="item.url"
-                    :class="[
-                        'flex items-center justify-between px-3.5 py-3 rounded-xl transition duration-150 group',
-                        isActive(item.url)
-                            ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/15'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                    ]"
+            <!-- روابط التنقل -->
+            <nav class="p-3 sm:p-4">
+                <p
+                    class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-ink-muted"
                 >
-                    <div class="flex items-center gap-3">
-                        <span class="text-base group-hover:scale-110 transition-transform">
-                            {{ item.icon }}
-                        </span>
-                        <span>{{ item.name }}</span>
-                    </div>
+                    حسابي والخدمات
+                </p>
 
-                    <span
-                        v-if="item.badge"
-                        :class="[
-                            'text-[10px] px-2 py-0.5 rounded-md font-mono font-bold',
+                <div class="space-y-1.5 mt-1">
+                    <Link
+                        v-for="item in navItems"
+                        :key="item.url"
+                        :href="item.url"
+                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                        :class="
                             isActive(item.url)
-                                ? 'bg-slate-950/20 text-slate-950'
-                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        ]"
+                                ? 'bg-brand-500 text-white shadow-glow'
+                                : 'text-ink-secondary hover:bg-glass-bg-hover hover:text-ink-primary'
+                        "
                     >
-                        {{ item.badge }}
-                    </span>
-                </Link>
+                        <component
+                            :is="item.icon"
+                            class="h-4 w-4 shrink-0"
+                            :stroke-width="2"
+                        />
+                        <span class="truncate">{{ item.name }}</span>
+                    </Link>
+                </div>
             </nav>
         </div>
 
-        <!-- معلومات اللاعب وزر تسجيل الخروج -->
-        <div class="p-4 border-t border-slate-800/80 bg-slate-950/30">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/60 text-amber-400 font-bold flex items-center justify-center text-xs shrink-0">
-                        🏃
-                    </div>
-                    <div class="truncate">
-                        <p class="text-xs font-bold text-white truncate">{{ user.name }}</p>
-                        <p class="text-[10px] text-amber-400 font-mono font-medium truncate">
-                            {{ member?.member_code || 'مشترك رياضي' }}
-                        </p>
-                    </div>
+        <!-- ============ السفلي: معلومات المستخدم ============ -->
+        <div class="border-t border-line-soft p-3 sm:p-4 mt-auto">
+            <div class="flex items-center gap-3">
+                <!-- أفاتار -->
+                <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line-strong bg-glass-bg text-sm font-bold text-brand-600 dark:text-brand-400"
+                >
+                    <User
+                        v-if="!user?.name"
+                        class="h-5 w-5"
+                        :stroke-width="2"
+                    />
+                    <span v-else>{{ userInitial }}</span>
                 </div>
 
+                <!-- الاسم والكود -->
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-bold text-ink-primary">
+                        {{ user.name }}
+                    </p>
+                    <p
+                        v-if="member?.member_code"
+                        class="truncate font-mono text-[10px] font-medium text-brand-600 dark:text-brand-400"
+                        dir="ltr"
+                    >
+                        {{ member.member_code }}
+                    </p>
+                    <p v-else class="truncate text-[10px] text-ink-muted">
+                        مشترك رياضي
+                    </p>
+                </div>
+
+                <!-- تسجيل الخروج -->
                 <Link
                     href="/logout"
                     method="post"
                     as="button"
-                    class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition border border-transparent hover:border-rose-500/20 shrink-0 cursor-pointer"
-                    title="تسجيل الخروج"
+                    aria-label="تسجيل الخروج"
+                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors duration-200 hover:bg-danger-500/10 hover:text-danger-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-400"
                 >
-                    🚪
+                    <LogOut class="h-4 w-4" :stroke-width="2" />
                 </Link>
             </div>
         </div>
