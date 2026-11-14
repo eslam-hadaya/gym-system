@@ -10,7 +10,7 @@ import {
     Menu,
     X,
 } from "@lucide/vue";
-import ThemeToggle from "@/components/ThemeToggle.vue";
+import ThemeToggle from "@/Components/ThemeToggle.vue";
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
